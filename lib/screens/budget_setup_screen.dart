@@ -12,6 +12,7 @@ import '../providers/database_providers.dart';
 import '../widgets/budget_editor_sheet.dart';
 import '../widgets/category_form_dialog.dart';
 import '../widgets/month_selector.dart';
+import 'add_expense_screen.dart';
 
 final _currencyFormat = NumberFormat.currency(symbol: currencySymbol, decimalDigits: 0);
 
@@ -49,6 +50,15 @@ class _BudgetSetupScreenState extends ConsumerState<BudgetSetupScreen> {
       appBar: AppBar(
         title: const Text('Budget Setup'),
         actions: [
+          // Temporary direct link until Step 4c's Dashboard provides real
+          // app-wide navigation between screens.
+          IconButton(
+            tooltip: 'Add expense',
+            icon: const Icon(Icons.receipt_long),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const AddExpenseScreen()),
+            ),
+          ),
           IconButton(
             tooltip: 'Copy previous month\'s budgets forward',
             icon: const Icon(Icons.content_copy),

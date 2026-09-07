@@ -16,6 +16,16 @@ class ExpenseRepository {
     return query.watch();
   }
 
+  /// Most recent expenses across all categories, newest first — for a
+  /// dashboard/add-expense "recent activity" list (FR-5.3 needs somewhere
+  /// to pick a past entry to edit/delete).
+  Stream<List<Expense>> watchRecent({int limit = 10}) {
+    final query = _db.select(_db.expenses)
+      ..orderBy([(e) => OrderingTerm.desc(e.date)])
+      ..limit(limit);
+    return query.watch();
+  }
+
   Stream<List<Expense>> watchInRange(
     DateTime startInclusive,
     DateTime endExclusive,
