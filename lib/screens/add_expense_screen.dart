@@ -8,7 +8,6 @@ import '../db/database.dart';
 import '../providers/category_providers.dart';
 import '../providers/database_providers.dart';
 import '../providers/expense_providers.dart';
-import 'budget_setup_screen.dart';
 
 final _currencyFormat = NumberFormat.currency(symbol: currencySymbol, decimalDigits: 0);
 final _dateFormat = DateFormat.yMMMd();
@@ -52,15 +51,6 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
               onPressed: () => setState(_resetForm),
               child: const Text('Cancel edit'),
             ),
-          // Temporary direct link until Step 4c's Dashboard provides real
-          // app-wide navigation between screens.
-          IconButton(
-            tooltip: 'Budget setup',
-            icon: const Icon(Icons.account_balance_wallet_outlined),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const BudgetSetupScreen()),
-            ),
-          ),
         ],
       ),
       body: topCategoriesAsync.when(
