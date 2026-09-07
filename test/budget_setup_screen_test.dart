@@ -7,20 +7,29 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  Widget buildApp(AppDatabase db) {
-    return ProviderScope(
-      overrides: [appDatabaseProvider.overrideWithValue(db)],
-      child: const MaterialApp(home: BudgetSetupScreen()),
-    );
-  }
-
   testWidgets('shows empty state, then a newly added category with its budget', (
     tester,
   ) async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
+    // Own the ProviderContainer ourselves (via UncontrolledProviderScope)
+    // instead of letting ProviderScope create/dispose one implicitly. That
+    // way we can dispose it *inside* the test body — while we can still
+    // pump — rather than relying on flutter_test's automatic post-test
+    // teardown, which disposes the widget tree after the test body
+    // returns and gives drift's query streams no chance to run their
+    // zero-duration cancellation Timer before the "no pending timers"
+    // invariant check.
+    final container = ProviderContainer(
+      overrides: [appDatabaseProvider.overrideWithValue(db)],
+    );
     addTearDown(db.close);
 
-    await tester.pumpWidget(buildApp(db));
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: BudgetSetupScreen()),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('No categories yet — tap + to add one.'), findsOneWidget);
@@ -46,5 +55,12 @@ void main() {
 
     expect(find.textContaining('৳3,000'), findsOneWidget);
     expect(find.textContaining('৳5,000'), findsOneWidget);
+
+    // Swap out the widget tree first, then dispose the (unowned) container
+    // ourselves and pump to flush drift's cancellation timer, all while
+    // still inside the test body.
+    await tester.pumpWidget(const SizedBox.shrink());
+    container.dispose();
+    await tester.pump(const Duration(milliseconds: 1));
   });
 }
