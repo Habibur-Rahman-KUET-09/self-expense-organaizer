@@ -88,6 +88,28 @@ class ExpenseRepository {
     return row.read(sumExpr) ?? 0;
   }
 
+  /// Total spend per category within [startInclusive, endExclusive) — one
+  /// grouped SQL query rather than fetching every row (FR-6.2's category
+  /// breakdown).
+  Future<Map<int, double>> sumByCategoryInRange(
+    DateTime startInclusive,
+    DateTime endExclusive,
+  ) async {
+    final sumExpr = _db.expenses.amount.sum();
+    final query = _db.selectOnly(_db.expenses)
+      ..addColumns([_db.expenses.categoryId, sumExpr])
+      ..where(
+        _db.expenses.date.isBiggerOrEqualValue(startInclusive) &
+            _db.expenses.date.isSmallerThanValue(endExclusive),
+      )
+      ..groupBy([_db.expenses.categoryId]);
+    final rows = await query.get();
+    return {
+      for (final row in rows)
+        row.read(_db.expenses.categoryId)!: row.read(sumExpr) ?? 0,
+    };
+  }
+
   Future<Expense?> getById(int id) => (_db.select(
     _db.expenses,
   )..where((e) => e.id.equals(id))).getSingleOrNull();

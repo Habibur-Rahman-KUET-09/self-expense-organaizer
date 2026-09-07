@@ -5,6 +5,15 @@ import 'package:expense_tracker/logic/trend_projection.dart';
 import 'package:expense_tracker/models/enums.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+void _expectRange(
+  (DateTime, DateTime) actual,
+  DateTime expectedStart,
+  DateTime expectedEnd,
+) {
+  expect(actual.$1, expectedStart);
+  expect(actual.$2, expectedEnd);
+}
+
 void main() {
   group('period_utils', () {
     test('daysInMonth handles leap years', () {
@@ -24,6 +33,60 @@ void main() {
       expect(quarterOfMonth(3), 1);
       expect(quarterOfMonth(4), 2);
       expect(quarterOfMonth(12), 4);
+    });
+
+    test('shiftMonth wraps across year boundaries in both directions', () {
+      expect(shiftMonth(2026, 9, -1), (2026, 8));
+      expect(shiftMonth(2026, 1, -1), (2025, 12));
+      expect(shiftMonth(2026, 12, 1), (2027, 1));
+      expect(shiftMonth(2026, 9, 0), (2026, 9));
+    });
+
+    test('shiftQuarter wraps across year boundaries in both directions', () {
+      expect(shiftQuarter(2026, 1, -1), (2025, 4));
+      expect(shiftQuarter(2026, 4, 1), (2027, 1));
+      expect(shiftQuarter(2026, 3, -1), (2026, 2));
+    });
+
+    test('reportPeriodRange: month offsets match shiftMonth', () {
+      _expectRange(
+        reportPeriodRange(ReportPeriod.month, DateTime(2026, 9, 15), -1),
+        DateTime(2026, 8),
+        DateTime(2026, 9),
+      );
+      _expectRange(
+        reportPeriodRange(ReportPeriod.month, DateTime(2026, 1, 15), -1),
+        DateTime(2025, 12),
+        DateTime(2026, 1),
+      );
+    });
+
+    test('reportPeriodRange: quarter offsets span 3 months', () {
+      // 2026-09-15 is in Q3 (Jul-Sep); previous quarter is Q2 (Apr-Jun).
+      _expectRange(
+        reportPeriodRange(ReportPeriod.quarter, DateTime(2026, 9, 15), -1),
+        DateTime(2026, 4),
+        DateTime(2026, 7),
+      );
+    });
+
+    test('reportPeriodRange: year offsets shift the calendar year', () {
+      _expectRange(
+        reportPeriodRange(ReportPeriod.year, DateTime(2026, 9, 15), -1),
+        DateTime(2025),
+        DateTime(2026),
+      );
+    });
+
+    test('reportPeriodRange: week offset -1 is the preceding Mon-Sun week', () {
+      // 2026-09-07 is a Monday.
+      final (start, end) = reportPeriodRange(
+        ReportPeriod.week,
+        DateTime(2026, 9, 10),
+        -1,
+      );
+      expect(start, DateTime(2026, 8, 31));
+      expect(end, DateTime(2026, 9, 7));
     });
   });
 

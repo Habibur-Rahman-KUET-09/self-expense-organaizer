@@ -3,6 +3,8 @@
 /// threshold, and projection math never has to reason about calendars.
 library;
 
+import '../models/enums.dart';
+
 /// Number of days in [year]-[month] (1-12), accounting for leap years.
 int daysInMonth(int year, int month) => DateTime(year, month + 1, 0).day;
 
@@ -45,3 +47,44 @@ int quarterOfMonth(int month) => ((month - 1) ~/ 3) + 1;
 /// Calendar year [year], as [start, endExclusive).
 (DateTime start, DateTime endExclusive) yearRange(int year) =>
     (DateTime(year, 1, 1), DateTime(year + 1, 1, 1));
+
+/// The (year, month) that is [offset] months before/after [year]-[month].
+(int year, int month) shiftMonth(int year, int month, int offset) {
+  final total = year * 12 + (month - 1) + offset;
+  return (total ~/ 12, (total % 12) + 1);
+}
+
+/// The (year, quarter) that is [offset] quarters before/after
+/// [year]-[quarter] (quarter is 1-4).
+(int year, int quarter) shiftQuarter(int year, int quarter, int offset) {
+  final total = year * 4 + (quarter - 1) + offset;
+  return (total ~/ 4, (total % 4) + 1);
+}
+
+/// The [start, endExclusive) range for the Reports screen's [period],
+/// [offset] periods before (negative) or after (positive) [reference]'s
+/// own period. offset 0 is the period containing [reference] itself.
+(DateTime start, DateTime endExclusive) reportPeriodRange(
+  ReportPeriod period,
+  DateTime reference,
+  int offset,
+) {
+  switch (period) {
+    case ReportPeriod.week:
+      return weekRangeContaining(
+        reference.add(Duration(days: 7 * offset)),
+      );
+    case ReportPeriod.month:
+      final (y, m) = shiftMonth(reference.year, reference.month, offset);
+      return (startOfMonth(y, m), startOfNextMonth(y, m));
+    case ReportPeriod.quarter:
+      final (y, q) = shiftQuarter(
+        reference.year,
+        quarterOfMonth(reference.month),
+        offset,
+      );
+      return quarterRange(y, q);
+    case ReportPeriod.year:
+      return yearRange(reference.year + offset);
+  }
+}

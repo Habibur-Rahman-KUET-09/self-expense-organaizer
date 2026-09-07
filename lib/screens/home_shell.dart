@@ -5,7 +5,7 @@ import '../providers/navigation_providers.dart';
 import 'add_expense_screen.dart';
 import 'budget_setup_screen.dart';
 import 'dashboard_screen.dart';
-import 'reports_placeholder_screen.dart';
+import 'reports_screen.dart';
 
 /// App-wide bottom navigation between the four Phase 1 screens
 /// (FR-8.2's "quick links" jump tabs via [bottomNavIndexProvider]).
@@ -16,7 +16,7 @@ class HomeShell extends ConsumerWidget {
     DashboardScreen(),
     AddExpenseScreen(),
     BudgetSetupScreen(),
-    ReportsPlaceholderScreen(),
+    ReportsScreen(),
   ];
 
   @override
