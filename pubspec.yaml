@@ -51,10 +51,10 @@ dependencies:
   intl: ^0.20.2
 
   # Manual CSV/JSON export (backup mechanism for Phase 1)
-  share_plus: ^10.1.4
+  share_plus: ^13.3.0
 
   # Picking a backup file to restore from
-  file_picker: ^8.1.2
+  file_picker: ^12.2.0
 
   # UUIDs for primary keys where needed
   uuid: ^4.5.1

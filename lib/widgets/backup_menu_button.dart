@@ -45,11 +45,11 @@ class BackupMenuButton extends ConsumerWidget {
   }
 
   Future<void> _restore(BuildContext context, WidgetRef ref) async {
-    final picked = await FilePicker.platform.pickFiles(
+    final picked = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: ['json'],
     );
-    final path = picked?.files.single.path;
+    final path = picked?.path;
     if (path == null) return; // user cancelled the picker
 
     if (!context.mounted) return;

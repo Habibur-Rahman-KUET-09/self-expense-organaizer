@@ -79,7 +79,9 @@ class BackupService {
     final json = await buildJsonBackup();
     final stamp = DateTime.now().toIso8601String().replaceAll(RegExp(r'[:.]'), '-');
     final file = await _writeToTempFile(json, 'expense_tracker_backup_$stamp.json');
-    await Share.shareXFiles([XFile(file.path)], text: 'Expense Tracker backup');
+    await SharePlus.instance.share(
+      ShareParams(files: [XFile(file.path)], text: 'Expense Tracker backup'),
+    );
   }
 
   /// All logged expenses as a spreadsheet-friendly CSV.
@@ -87,7 +89,9 @@ class BackupService {
     final csv = await buildExpensesCsv();
     final stamp = DateTime.now().toIso8601String().replaceAll(RegExp(r'[:.]'), '-');
     final file = await _writeToTempFile(csv, 'expenses_$stamp.csv');
-    await Share.shareXFiles([XFile(file.path)], text: 'Expense Tracker — expenses export');
+    await SharePlus.instance.share(
+      ShareParams(files: [XFile(file.path)], text: 'Expense Tracker — expenses export'),
+    );
   }
 
   /// Restores every table from a [buildJsonBackup]-shaped JSON string,
