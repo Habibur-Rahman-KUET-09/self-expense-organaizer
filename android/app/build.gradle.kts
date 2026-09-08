@@ -6,7 +6,10 @@ plugins {
 
 android {
     namespace = "com.habibur.expensetracker.expense_tracker"
-    compileSdk = flutter.compileSdkVersion
+    // file_picker's flutter_plugin_android_lifecycle dependency requires
+    // compileSdk 36+; Flutter's own default (flutter.compileSdkVersion) is
+    // still 34 as of this Flutter version, so it's pinned explicitly here.
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
