@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:expense_tracker/db/database.dart';
 import 'package:expense_tracker/providers/database_providers.dart';
@@ -25,7 +26,8 @@ void main() {
           categoryId: foodId,
           year: now.year,
           month: now.month,
-          maxCost: 2000,
+          minCost: const Value(1000),
+          maxCost: const Value(2000),
         ),
       );
       await container.read(expenseRepositoryProvider).add(

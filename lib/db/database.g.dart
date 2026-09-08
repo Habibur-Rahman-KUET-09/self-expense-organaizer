@@ -483,9 +483,9 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
   late final GeneratedColumn<double> maxCost = GeneratedColumn<double>(
     'max_cost',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.double,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _thresholdPercentMeta = const VerificationMeta(
     'thresholdPercent',
@@ -509,6 +509,21 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
     requiredDuringInsert: false,
     defaultValue: Constant(ThresholdBase.max.name),
   ).withConverter<ThresholdBase>($BudgetsTable.$converterthresholdBase);
+  static const VerificationMeta _noAlertMeta = const VerificationMeta(
+    'noAlert',
+  );
+  @override
+  late final GeneratedColumn<bool> noAlert = GeneratedColumn<bool>(
+    'no_alert',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("no_alert" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -519,6 +534,7 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
     maxCost,
     thresholdPercent,
     thresholdBase,
+    noAlert,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -570,8 +586,6 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
         _maxCostMeta,
         maxCost.isAcceptableOrUnknown(data['max_cost']!, _maxCostMeta),
       );
-    } else if (isInserting) {
-      context.missing(_maxCostMeta);
     }
     if (data.containsKey('threshold_percent')) {
       context.handle(
@@ -580,6 +594,12 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
           data['threshold_percent']!,
           _thresholdPercentMeta,
         ),
+      );
+    }
+    if (data.containsKey('no_alert')) {
+      context.handle(
+        _noAlertMeta,
+        noAlert.isAcceptableOrUnknown(data['no_alert']!, _noAlertMeta),
       );
     }
     return context;
@@ -618,7 +638,7 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
       maxCost: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}max_cost'],
-      )!,
+      ),
       thresholdPercent: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}threshold_percent'],
@@ -629,6 +649,10 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
           data['${effectivePrefix}threshold_base'],
         )!,
       ),
+      noAlert: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}no_alert'],
+      )!,
     );
   }
 
@@ -650,23 +674,36 @@ class Budget extends DataClass implements Insertable<Budget> {
 
   /// 1-12
   final int month;
+
+  /// Required — the committed budget floor for this category/month.
   final double minCost;
-  final double maxCost;
+
+  /// Optional soft ceiling. When unset, [minCost] doubles as the ceiling
+  /// everywhere a single "budget" figure is needed (see
+  /// `effectiveCeiling` in lib/logic/threshold_checker.dart).
+  final double? maxCost;
 
   /// Threshold percentage, e.g. 80 for 80%. See FR-4.1.
   final double thresholdPercent;
 
-  /// Whether [thresholdPercent] is applied against minCost or maxCost.
+  /// Whether [thresholdPercent] is applied against minCost or maxCost
+  /// (falls back to minCost if maxCost isn't set).
   final ThresholdBase thresholdBase;
+
+  /// When true, this category is excluded from the Active Alerts banner
+  /// and the Alert log, but its spend is still tracked/calculated
+  /// normally everywhere else (dashboard totals, progress, strikethrough).
+  final bool noAlert;
   const Budget({
     required this.id,
     required this.categoryId,
     required this.year,
     required this.month,
     required this.minCost,
-    required this.maxCost,
+    this.maxCost,
     required this.thresholdPercent,
     required this.thresholdBase,
+    required this.noAlert,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -676,13 +713,16 @@ class Budget extends DataClass implements Insertable<Budget> {
     map['year'] = Variable<int>(year);
     map['month'] = Variable<int>(month);
     map['min_cost'] = Variable<double>(minCost);
-    map['max_cost'] = Variable<double>(maxCost);
+    if (!nullToAbsent || maxCost != null) {
+      map['max_cost'] = Variable<double>(maxCost);
+    }
     map['threshold_percent'] = Variable<double>(thresholdPercent);
     {
       map['threshold_base'] = Variable<String>(
         $BudgetsTable.$converterthresholdBase.toSql(thresholdBase),
       );
     }
+    map['no_alert'] = Variable<bool>(noAlert);
     return map;
   }
 
@@ -693,9 +733,12 @@ class Budget extends DataClass implements Insertable<Budget> {
       year: Value(year),
       month: Value(month),
       minCost: Value(minCost),
-      maxCost: Value(maxCost),
+      maxCost: maxCost == null && nullToAbsent
+          ? const Value.absent()
+          : Value(maxCost),
       thresholdPercent: Value(thresholdPercent),
       thresholdBase: Value(thresholdBase),
+      noAlert: Value(noAlert),
     );
   }
 
@@ -710,11 +753,12 @@ class Budget extends DataClass implements Insertable<Budget> {
       year: serializer.fromJson<int>(json['year']),
       month: serializer.fromJson<int>(json['month']),
       minCost: serializer.fromJson<double>(json['minCost']),
-      maxCost: serializer.fromJson<double>(json['maxCost']),
+      maxCost: serializer.fromJson<double?>(json['maxCost']),
       thresholdPercent: serializer.fromJson<double>(json['thresholdPercent']),
       thresholdBase: $BudgetsTable.$converterthresholdBase.fromJson(
         serializer.fromJson<String>(json['thresholdBase']),
       ),
+      noAlert: serializer.fromJson<bool>(json['noAlert']),
     );
   }
   @override
@@ -726,11 +770,12 @@ class Budget extends DataClass implements Insertable<Budget> {
       'year': serializer.toJson<int>(year),
       'month': serializer.toJson<int>(month),
       'minCost': serializer.toJson<double>(minCost),
-      'maxCost': serializer.toJson<double>(maxCost),
+      'maxCost': serializer.toJson<double?>(maxCost),
       'thresholdPercent': serializer.toJson<double>(thresholdPercent),
       'thresholdBase': serializer.toJson<String>(
         $BudgetsTable.$converterthresholdBase.toJson(thresholdBase),
       ),
+      'noAlert': serializer.toJson<bool>(noAlert),
     };
   }
 
@@ -740,18 +785,20 @@ class Budget extends DataClass implements Insertable<Budget> {
     int? year,
     int? month,
     double? minCost,
-    double? maxCost,
+    Value<double?> maxCost = const Value.absent(),
     double? thresholdPercent,
     ThresholdBase? thresholdBase,
+    bool? noAlert,
   }) => Budget(
     id: id ?? this.id,
     categoryId: categoryId ?? this.categoryId,
     year: year ?? this.year,
     month: month ?? this.month,
     minCost: minCost ?? this.minCost,
-    maxCost: maxCost ?? this.maxCost,
+    maxCost: maxCost.present ? maxCost.value : this.maxCost,
     thresholdPercent: thresholdPercent ?? this.thresholdPercent,
     thresholdBase: thresholdBase ?? this.thresholdBase,
+    noAlert: noAlert ?? this.noAlert,
   );
   Budget copyWithCompanion(BudgetsCompanion data) {
     return Budget(
@@ -769,6 +816,7 @@ class Budget extends DataClass implements Insertable<Budget> {
       thresholdBase: data.thresholdBase.present
           ? data.thresholdBase.value
           : this.thresholdBase,
+      noAlert: data.noAlert.present ? data.noAlert.value : this.noAlert,
     );
   }
 
@@ -782,7 +830,8 @@ class Budget extends DataClass implements Insertable<Budget> {
           ..write('minCost: $minCost, ')
           ..write('maxCost: $maxCost, ')
           ..write('thresholdPercent: $thresholdPercent, ')
-          ..write('thresholdBase: $thresholdBase')
+          ..write('thresholdBase: $thresholdBase, ')
+          ..write('noAlert: $noAlert')
           ..write(')'))
         .toString();
   }
@@ -797,6 +846,7 @@ class Budget extends DataClass implements Insertable<Budget> {
     maxCost,
     thresholdPercent,
     thresholdBase,
+    noAlert,
   );
   @override
   bool operator ==(Object other) =>
@@ -809,7 +859,8 @@ class Budget extends DataClass implements Insertable<Budget> {
           other.minCost == this.minCost &&
           other.maxCost == this.maxCost &&
           other.thresholdPercent == this.thresholdPercent &&
-          other.thresholdBase == this.thresholdBase);
+          other.thresholdBase == this.thresholdBase &&
+          other.noAlert == this.noAlert);
 }
 
 class BudgetsCompanion extends UpdateCompanion<Budget> {
@@ -818,9 +869,10 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
   final Value<int> year;
   final Value<int> month;
   final Value<double> minCost;
-  final Value<double> maxCost;
+  final Value<double?> maxCost;
   final Value<double> thresholdPercent;
   final Value<ThresholdBase> thresholdBase;
+  final Value<bool> noAlert;
   const BudgetsCompanion({
     this.id = const Value.absent(),
     this.categoryId = const Value.absent(),
@@ -830,6 +882,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
     this.maxCost = const Value.absent(),
     this.thresholdPercent = const Value.absent(),
     this.thresholdBase = const Value.absent(),
+    this.noAlert = const Value.absent(),
   });
   BudgetsCompanion.insert({
     this.id = const Value.absent(),
@@ -837,13 +890,13 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
     required int year,
     required int month,
     this.minCost = const Value.absent(),
-    required double maxCost,
+    this.maxCost = const Value.absent(),
     this.thresholdPercent = const Value.absent(),
     this.thresholdBase = const Value.absent(),
+    this.noAlert = const Value.absent(),
   }) : categoryId = Value(categoryId),
        year = Value(year),
-       month = Value(month),
-       maxCost = Value(maxCost);
+       month = Value(month);
   static Insertable<Budget> custom({
     Expression<int>? id,
     Expression<int>? categoryId,
@@ -853,6 +906,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
     Expression<double>? maxCost,
     Expression<double>? thresholdPercent,
     Expression<String>? thresholdBase,
+    Expression<bool>? noAlert,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -863,6 +917,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
       if (maxCost != null) 'max_cost': maxCost,
       if (thresholdPercent != null) 'threshold_percent': thresholdPercent,
       if (thresholdBase != null) 'threshold_base': thresholdBase,
+      if (noAlert != null) 'no_alert': noAlert,
     });
   }
 
@@ -872,9 +927,10 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
     Value<int>? year,
     Value<int>? month,
     Value<double>? minCost,
-    Value<double>? maxCost,
+    Value<double?>? maxCost,
     Value<double>? thresholdPercent,
     Value<ThresholdBase>? thresholdBase,
+    Value<bool>? noAlert,
   }) {
     return BudgetsCompanion(
       id: id ?? this.id,
@@ -885,6 +941,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
       maxCost: maxCost ?? this.maxCost,
       thresholdPercent: thresholdPercent ?? this.thresholdPercent,
       thresholdBase: thresholdBase ?? this.thresholdBase,
+      noAlert: noAlert ?? this.noAlert,
     );
   }
 
@@ -917,6 +974,9 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
         $BudgetsTable.$converterthresholdBase.toSql(thresholdBase.value),
       );
     }
+    if (noAlert.present) {
+      map['no_alert'] = Variable<bool>(noAlert.value);
+    }
     return map;
   }
 
@@ -930,7 +990,8 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
           ..write('minCost: $minCost, ')
           ..write('maxCost: $maxCost, ')
           ..write('thresholdPercent: $thresholdPercent, ')
-          ..write('thresholdBase: $thresholdBase')
+          ..write('thresholdBase: $thresholdBase, ')
+          ..write('noAlert: $noAlert')
           ..write(')'))
         .toString();
   }
@@ -2348,9 +2409,10 @@ typedef $$BudgetsTableCreateCompanionBuilder = BudgetsCompanion Function({
   required int year,
   required int month,
   Value<double> minCost,
-  required double maxCost,
+  Value<double?> maxCost,
   Value<double> thresholdPercent,
   Value<ThresholdBase> thresholdBase,
+  Value<bool> noAlert,
 });
 typedef $$BudgetsTableUpdateCompanionBuilder = BudgetsCompanion Function({
   Value<int> id,
@@ -2358,9 +2420,10 @@ typedef $$BudgetsTableUpdateCompanionBuilder = BudgetsCompanion Function({
   Value<int> year,
   Value<int> month,
   Value<double> minCost,
-  Value<double> maxCost,
+  Value<double?> maxCost,
   Value<double> thresholdPercent,
   Value<ThresholdBase> thresholdBase,
+  Value<bool> noAlert,
 });
 
 final class $$BudgetsTableReferences
@@ -2428,6 +2491,11 @@ class $$BudgetsTableFilterComposer
   get thresholdBase => $composableBuilder(
     column: $table.thresholdBase,
     builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<bool> get noAlert => $composableBuilder(
+    column: $table.noAlert,
+    builder: (column) => ColumnFilters(column),
   );
 
   $$CategoriesTableFilterComposer get categoryId {
@@ -2498,6 +2566,11 @@ class $$BudgetsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get noAlert => $composableBuilder(
+    column: $table.noAlert,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$CategoriesTableOrderingComposer get categoryId {
     final $$CategoriesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -2557,6 +2630,9 @@ class $$BudgetsTableAnnotationComposer
         builder: (column) => column,
       );
 
+  GeneratedColumn<bool> get noAlert =>
+      $composableBuilder(column: $table.noAlert, builder: (column) => column);
+
   $$CategoriesTableAnnotationComposer get categoryId {
     final $$CategoriesTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -2614,9 +2690,10 @@ class $$BudgetsTableTableManager
                 Value<int> year = const Value.absent(),
                 Value<int> month = const Value.absent(),
                 Value<double> minCost = const Value.absent(),
-                Value<double> maxCost = const Value.absent(),
+                Value<double?> maxCost = const Value.absent(),
                 Value<double> thresholdPercent = const Value.absent(),
                 Value<ThresholdBase> thresholdBase = const Value.absent(),
+                Value<bool> noAlert = const Value.absent(),
               }) => BudgetsCompanion(
                 id: id,
                 categoryId: categoryId,
@@ -2626,6 +2703,7 @@ class $$BudgetsTableTableManager
                 maxCost: maxCost,
                 thresholdPercent: thresholdPercent,
                 thresholdBase: thresholdBase,
+                noAlert: noAlert,
               ),
           createCompanionCallback:
               ({
@@ -2634,9 +2712,10 @@ class $$BudgetsTableTableManager
                 required int year,
                 required int month,
                 Value<double> minCost = const Value.absent(),
-                required double maxCost,
+                Value<double?> maxCost = const Value.absent(),
                 Value<double> thresholdPercent = const Value.absent(),
                 Value<ThresholdBase> thresholdBase = const Value.absent(),
+                Value<bool> noAlert = const Value.absent(),
               }) => BudgetsCompanion.insert(
                 id: id,
                 categoryId: categoryId,
@@ -2646,6 +2725,7 @@ class $$BudgetsTableTableManager
                 maxCost: maxCost,
                 thresholdPercent: thresholdPercent,
                 thresholdBase: thresholdBase,
+                noAlert: noAlert,
               ),
           withReferenceMapper: (p0) => p0
               .map(

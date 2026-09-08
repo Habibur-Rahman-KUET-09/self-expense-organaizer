@@ -137,6 +137,18 @@ void main() {
       );
     });
 
+    test('resolveThresholdBase falls back to min when max base is chosen but unset', () {
+      expect(
+        resolveThresholdBase(base: ThresholdBase.max, minCost: 3000, maxCost: null),
+        3000,
+      );
+    });
+
+    test('effectiveCeiling is max if set, otherwise min', () {
+      expect(effectiveCeiling(minCost: 3000, maxCost: 5000), 5000);
+      expect(effectiveCeiling(minCost: 3000, maxCost: null), 3000);
+    });
+
     test('isThresholdBreached fires at or above the trigger value', () {
       expect(isThresholdBreached(cumulativeActual: 4000, triggerValue: 4000), isTrue);
       expect(isThresholdBreached(cumulativeActual: 3999, triggerValue: 4000), isFalse);

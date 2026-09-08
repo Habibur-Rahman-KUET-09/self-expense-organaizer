@@ -5,13 +5,14 @@ import '../models/enums.dart';
 
 typedef BudgetFormResult = ({
   double minCost,
-  double maxCost,
+  double? maxCost,
   double thresholdPercent,
   ThresholdBase thresholdBase,
+  bool noAlert,
 });
 
-/// Bottom sheet to set/edit a category's min/max budget and threshold for
-/// one month (FR-2.1, FR-4.1/FR-4.2).
+/// Bottom sheet to set/edit a category's budget for one month. Minimum is
+/// required; Maximum is an optional soft ceiling (FR-2.1, FR-4.1/FR-4.2).
 class BudgetEditorSheet extends StatefulWidget {
   const BudgetEditorSheet({super.key, this.existing, required this.categoryName});
 
@@ -45,6 +46,7 @@ class _BudgetEditorSheetState extends State<BudgetEditorSheet> {
   late final TextEditingController _maxController;
   late double _thresholdPercent;
   late ThresholdBase _thresholdBase;
+  late bool _noAlert;
 
   @override
   void initState() {
@@ -55,12 +57,13 @@ class _BudgetEditorSheetState extends State<BudgetEditorSheet> {
           : '',
     );
     _maxController = TextEditingController(
-      text: widget.existing != null
-          ? _trimTrailingZero(widget.existing!.maxCost)
+      text: widget.existing?.maxCost != null
+          ? _trimTrailingZero(widget.existing!.maxCost!)
           : '',
     );
     _thresholdPercent = widget.existing?.thresholdPercent ?? 90;
     _thresholdBase = widget.existing?.thresholdBase ?? ThresholdBase.max;
+    _noAlert = widget.existing?.noAlert ?? false;
   }
 
   static String _trimTrailingZero(double value) {
@@ -95,24 +98,15 @@ class _BudgetEditorSheetState extends State<BudgetEditorSheet> {
               TextFormField(
                 controller: _minController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(labelText: 'Minimum probable cost'),
-                validator: _validateNonNegativeNumber,
+                decoration: const InputDecoration(labelText: 'Minimum (required)'),
+                validator: _validateMin,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _maxController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(labelText: 'Maximum probable cost'),
-                validator: (value) {
-                  final basic = _validateNonNegativeNumber(value);
-                  if (basic != null) return basic;
-                  final min = double.tryParse(_minController.text.trim());
-                  final max = double.tryParse(value!.trim());
-                  if (min != null && max != null && max < min) {
-                    return 'Max must be at least min';
-                  }
-                  return null;
-                },
+                decoration: const InputDecoration(labelText: 'Maximum (optional)'),
+                validator: _validateMax,
               ),
               const SizedBox(height: 20),
               Text('Alert threshold: ${_thresholdPercent.round()}%'),
@@ -136,7 +130,24 @@ class _BudgetEditorSheetState extends State<BudgetEditorSheet> {
                 onSelectionChanged: (selection) =>
                     setState(() => _thresholdBase = selection.first),
               ),
-              const SizedBox(height: 24),
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Falls back to Min if Max isn\'t set.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+              CheckboxListTile(
+                value: _noAlert,
+                onChanged: (value) => setState(() => _noAlert = value ?? false),
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                title: const Text('No Alert Needed'),
+                subtitle: const Text(
+                  'Keeps tracking this category normally, just without alerts.',
+                ),
+              ),
+              const SizedBox(height: 8),
               Row(
                 children: [
                   Expanded(
@@ -158,7 +169,7 @@ class _BudgetEditorSheetState extends State<BudgetEditorSheet> {
     );
   }
 
-  String? _validateNonNegativeNumber(String? value) {
+  String? _validateMin(String? value) {
     if (value == null || value.trim().isEmpty) return 'Required';
     final parsed = double.tryParse(value.trim());
     if (parsed == null) return 'Enter a valid number';
@@ -166,13 +177,25 @@ class _BudgetEditorSheetState extends State<BudgetEditorSheet> {
     return null;
   }
 
+  String? _validateMax(String? value) {
+    if (value == null || value.trim().isEmpty) return null; // optional
+    final parsed = double.tryParse(value.trim());
+    if (parsed == null) return 'Enter a valid number';
+    if (parsed < 0) return 'Must be 0 or more';
+    final min = double.tryParse(_minController.text.trim());
+    if (min != null && parsed < min) return 'Max must be at least min';
+    return null;
+  }
+
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
+    final maxText = _maxController.text.trim();
     Navigator.of(context).pop((
       minCost: double.parse(_minController.text.trim()),
-      maxCost: double.parse(_maxController.text.trim()),
+      maxCost: maxText.isEmpty ? null : double.parse(maxText),
       thresholdPercent: _thresholdPercent,
       thresholdBase: _thresholdBase,
+      noAlert: _noAlert,
     ));
   }
 }

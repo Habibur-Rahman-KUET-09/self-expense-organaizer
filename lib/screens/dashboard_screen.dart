@@ -24,7 +24,7 @@ class DashboardScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Dashboard')),
       body: summaryAsync.when(
         data: (summary) {
-          if (summary.totalMax == 0 && summary.categoryProgress.isEmpty) {
+          if (summary.totalBudget == 0 && summary.categoryProgress.isEmpty) {
             return _EmptyState(
               onSetUpBudgets: () =>
                   ref.read(bottomNavIndexProvider.notifier).state = 2,
@@ -103,9 +103,9 @@ class _TotalSpendCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ratio = summary.totalMax <= 0
+    final ratio = summary.totalBudget <= 0
         ? 0.0
-        : (summary.totalActual / summary.totalMax).clamp(0.0, 1.5);
+        : (summary.totalActual / summary.totalBudget).clamp(0.0, 1.5);
     final color = ratio >= 1.0
         ? Colors.red
         : ratio >= 0.8
@@ -125,7 +125,7 @@ class _TotalSpendCard extends StatelessWidget {
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             Text(
-              'of ${_currencyFormat.format(summary.totalMax)} budgeted',
+              'of ${_currencyFormat.format(summary.totalBudget)} budgeted',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 12),
@@ -231,7 +231,7 @@ class _CategoryProgressTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ratio = (progress.percentOfMax / 100).clamp(0.0, 1.5);
+    final ratio = (progress.percentOfBudget / 100).clamp(0.0, 1.5);
     final color = ratio >= 1.0
         ? Colors.red
         : ratio >= 0.8
@@ -253,7 +253,12 @@ class _CategoryProgressTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(progress.category.name),
+                  Text(
+                    progress.category.name,
+                    style: progress.isOverBudget
+                        ? const TextStyle(decoration: TextDecoration.lineThrough)
+                        : null,
+                  ),
                   const SizedBox(height: 4),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(6),
@@ -268,7 +273,7 @@ class _CategoryProgressTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            Text('${progress.percentOfMax.round()}%'),
+            Text('${progress.percentOfBudget.round()}%'),
           ],
         ),
       ),

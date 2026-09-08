@@ -22,3 +22,18 @@ final expensesInMonthProvider = StreamProvider.autoDispose
       final end = startOfNextMonth(key.year, key.month);
       return ref.watch(expenseRepositoryProvider).watchInRange(start, end);
     });
+
+typedef CategoryMonthKey = ({int categoryId, int year, int month});
+
+/// A single category's month-to-date actual spend — feeds the Budget Setup
+/// screen's strikethrough (Expense ≥ category budget). Reactive to any
+/// expense change in that month.
+final categoryActualForMonthProvider = FutureProvider.autoDispose
+    .family<double, CategoryMonthKey>((ref, key) {
+      ref.watch(expensesInMonthProvider((year: key.year, month: key.month)));
+      final start = startOfMonth(key.year, key.month);
+      final end = startOfNextMonth(key.year, key.month);
+      return ref
+          .watch(expenseRepositoryProvider)
+          .sumForCategoryInRange(key.categoryId, start, end);
+    });

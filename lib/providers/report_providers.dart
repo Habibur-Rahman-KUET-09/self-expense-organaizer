@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../logic/period_utils.dart';
 import '../logic/trend_projection.dart';
+import '../models/budget_extensions.dart';
 import '../models/enums.dart';
 import 'database_providers.dart';
 
@@ -63,10 +64,11 @@ final periodProjectionProvider = FutureProvider.autoDispose
 
 /// Budgets are only defined per category per month (Section 6), so a
 /// week/quarter/year's "max budget" is approximated as the sum of the
-/// monthly max budgets for every calendar month the period overlaps. For a
-/// week that straddles two months this double-counts each month's full
-/// budget rather than prorating by overlap — an accepted Phase 1
-/// simplification given budgets have no finer-grained native unit.
+/// monthly effective ceilings (Max if set, else Min — see
+/// BudgetCeiling.effectiveCeiling) for every calendar month the period
+/// overlaps. For a week that straddles two months this double-counts each
+/// month's full budget rather than prorating by overlap — an accepted
+/// Phase 1 simplification given budgets have no finer-grained native unit.
 Future<double> _maxBudgetForPeriod(
   Ref ref,
   ReportPeriod period,
@@ -79,15 +81,17 @@ Future<double> _maxBudgetForPeriod(
   var cursor = DateTime(start.year, start.month);
   while (cursor.isBefore(end)) {
     if (categoryId == null) {
-      final totals = await budgetRepo.totalsForMonth(cursor.year, cursor.month);
-      total += totals.max;
+      final budgets = await budgetRepo.getForMonth(cursor.year, cursor.month);
+      for (final budget in budgets) {
+        total += budget.effectiveCeiling;
+      }
     } else {
       final budget = await budgetRepo.getForCategoryMonth(
         categoryId,
         cursor.year,
         cursor.month,
       );
-      total += budget?.maxCost ?? 0;
+      total += budget?.effectiveCeiling ?? 0;
     }
     cursor = DateTime(cursor.year, cursor.month + 1);
   }

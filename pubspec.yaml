@@ -71,6 +71,10 @@ dev_dependencies:
   drift_dev: ^2.22.1
   build_runner: ^2.4.13
 
+  # Raw sqlite3 access, used in tests to hand-build an old schema version
+  # and verify migrations preserve data.
+  sqlite3: ^3.5.2
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 

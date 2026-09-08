@@ -35,16 +35,27 @@ class Budgets extends Table {
   /// 1-12
   IntColumn get month => integer()();
 
+  /// Required — the committed budget floor for this category/month.
   RealColumn get minCost => real().withDefault(const Constant(0))();
-  RealColumn get maxCost => real()();
+
+  /// Optional soft ceiling. When unset, [minCost] doubles as the ceiling
+  /// everywhere a single "budget" figure is needed (see
+  /// `effectiveCeiling` in lib/logic/threshold_checker.dart).
+  RealColumn get maxCost => real().nullable()();
 
   /// Threshold percentage, e.g. 80 for 80%. See FR-4.1.
   RealColumn get thresholdPercent =>
       real().withDefault(const Constant(90))();
 
-  /// Whether [thresholdPercent] is applied against minCost or maxCost.
+  /// Whether [thresholdPercent] is applied against minCost or maxCost
+  /// (falls back to minCost if maxCost isn't set).
   TextColumn get thresholdBase => textEnum<ThresholdBase>()
       .withDefault(Constant(ThresholdBase.max.name))();
+
+  /// When true, this category is excluded from the Active Alerts banner
+  /// and the Alert log, but its spend is still tracked/calculated
+  /// normally everywhere else (dashboard totals, progress, strikethrough).
+  BoolColumn get noAlert => boolean().withDefault(const Constant(false))();
 
   @override
   List<Set<Column>> get uniqueKeys => [

@@ -63,4 +63,56 @@ void main() {
     container.dispose();
     await tester.pump(const Duration(milliseconds: 1));
   });
+
+  testWidgets(
+    'a Min-only budget shows just Min (no range), and strikes through once spend reaches it',
+    (tester) async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final container = ProviderContainer(
+        overrides: [appDatabaseProvider.overrideWithValue(db)],
+      );
+      addTearDown(db.close);
+
+      final foodId = await container
+          .read(categoryRepositoryProvider)
+          .add(name: 'Food');
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: BudgetSetupScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Set a Min-only budget (leave Max empty).
+      await tester.tap(find.text('Set budget'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).first, '1000');
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      final budgetTextFinder = find.textContaining('৳1,000');
+      expect(budgetTextFinder, findsOneWidget);
+      expect(
+        tester.widget<Text>(budgetTextFinder).data,
+        isNot(contains('–')), // no range dash when Max isn't set
+      );
+      Text budgetText() => tester.widget<Text>(budgetTextFinder);
+      expect(budgetText().style?.decoration, isNot(TextDecoration.lineThrough));
+
+      // Spend up to the (Min-as-ceiling) budget.
+      final now = DateTime.now();
+      await container.read(expenseRepositoryProvider).add(
+        ExpensesCompanion.insert(categoryId: foodId, date: now, amount: 1000),
+      );
+      await tester.pumpAndSettle();
+
+      expect(budgetText().style?.decoration, TextDecoration.lineThrough);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      container.dispose();
+      await tester.pump(const Duration(milliseconds: 1));
+    },
+  );
 }

@@ -15,6 +15,12 @@ class BudgetRepository {
     return query.watch();
   }
 
+  Future<List<Budget>> getForMonth(int year, int month) {
+    return (_db.select(
+      _db.budgets,
+    )..where((b) => b.year.equals(year) & b.month.equals(month))).get();
+  }
+
   Stream<Budget?> watchForCategoryMonth(int categoryId, int year, int month) {
     final query = _db.select(_db.budgets)..where(
       (b) =>
@@ -77,9 +83,10 @@ class BudgetRepository {
             year: toYear,
             month: toMonth,
             minCost: Value(budget.minCost),
-            maxCost: budget.maxCost,
+            maxCost: Value(budget.maxCost),
             thresholdPercent: Value(budget.thresholdPercent),
             thresholdBase: Value(budget.thresholdBase),
+            noAlert: Value(budget.noAlert),
           ),
           mode: InsertMode.insertOrIgnore,
         );
@@ -87,13 +94,14 @@ class BudgetRepository {
     });
   }
 
-  /// FR-2.3: total monthly min/max across all categories.
+  /// FR-2.3: total monthly min/max across all categories. [max] only sums
+  /// categories that actually have a Max set (unset ones contribute 0) —
+  /// it's a reference figure, not the Dashboard's headline budget total,
+  /// which is Min-only by design (see DashboardSummary.totalBudget).
   Future<({double min, double max})> totalsForMonth(int year, int month) async {
-    final rows = await (_db.select(
-      _db.budgets,
-    )..where((b) => b.year.equals(year) & b.month.equals(month))).get();
+    final rows = await getForMonth(year, month);
     final min = rows.fold<double>(0, (sum, b) => sum + b.minCost);
-    final max = rows.fold<double>(0, (sum, b) => sum + b.maxCost);
+    final max = rows.fold<double>(0, (sum, b) => sum + (b.maxCost ?? 0));
     return (min: min, max: max);
   }
 }

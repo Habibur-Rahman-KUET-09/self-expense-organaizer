@@ -61,7 +61,9 @@ final dashboardSummaryProvider = FutureProvider.autoDispose<DashboardSummary>((
 
   final daysTotal = daysInMonth(year, month);
   final daysElapsed = daysElapsedInMonth(now, year: year, month: month);
-  final allowance = dailyAllowance(monthlyBudget: totals.max, daysInMonth: daysTotal);
+  // Dashboard's Total Budget is always the sum of Minimums (see
+  // DashboardSummary.totalBudget) — Max never factors into it.
+  final allowance = dailyAllowance(monthlyBudget: totals.min, daysInMonth: daysTotal);
   final allowed = cumulativeAllowed(
     dailyAllowanceValue: allowance,
     daysElapsed: daysElapsed,
@@ -73,8 +75,7 @@ final dashboardSummaryProvider = FutureProvider.autoDispose<DashboardSummary>((
 
   return DashboardSummary(
     totalActual: totalActual,
-    totalMin: totals.min,
-    totalMax: totals.max,
+    totalBudget: totals.min,
     pace: pace,
     dailyAllowanceValue: allowance,
     cumulativeAllowedValue: allowed,

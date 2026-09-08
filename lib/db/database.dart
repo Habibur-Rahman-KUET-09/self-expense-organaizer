@@ -21,7 +21,20 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (Migrator m) => m.createAll(),
+    onUpgrade: (Migrator m, int from, int to) async {
+      if (from < 2) {
+        // v2: maxCost became optional (nullable), and noAlert was added.
+        // SQLite can't alter a column's nullability in place, so recreate
+        // the table and copy existing rows across.
+        await m.alterTable(TableMigration(budgets, newColumns: [budgets.noAlert]));
+      }
+    },
+  );
 
   static LazyDatabase _openConnection() {
     return LazyDatabase(() async {

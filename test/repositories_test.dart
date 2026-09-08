@@ -68,7 +68,7 @@ void main() {
         year: 2026,
         month: 9,
         minCost: const Value(3000),
-        maxCost: 5000,
+        maxCost: const Value(5000),
         thresholdPercent: const Value(80),
         thresholdBase: const Value(ThresholdBase.max),
       ),
@@ -79,7 +79,7 @@ void main() {
         categoryId: foodId,
         year: 2026,
         month: 9,
-        maxCost: 6000,
+        maxCost: const Value(6000),
       ),
     );
 
@@ -92,10 +92,20 @@ void main() {
     final foodId = await categoryRepo.add(name: 'Food');
     final transportId = await categoryRepo.add(name: 'Transport');
     await budgetRepo.upsert(
-      BudgetsCompanion.insert(categoryId: foodId, year: 2026, month: 9, maxCost: 5000),
+      BudgetsCompanion.insert(
+        categoryId: foodId,
+        year: 2026,
+        month: 9,
+        maxCost: const Value(5000),
+      ),
     );
     await budgetRepo.upsert(
-      BudgetsCompanion.insert(categoryId: transportId, year: 2026, month: 9, maxCost: 2000),
+      BudgetsCompanion.insert(
+        categoryId: transportId,
+        year: 2026,
+        month: 9,
+        maxCost: const Value(2000),
+      ),
     );
 
     final totals = await budgetRepo.totalsForMonth(2026, 9);
@@ -105,10 +115,20 @@ void main() {
   test('copyForward does not clobber existing budgets (FR-2.2)', () async {
     final foodId = await categoryRepo.add(name: 'Food');
     await budgetRepo.upsert(
-      BudgetsCompanion.insert(categoryId: foodId, year: 2026, month: 8, maxCost: 5000),
+      BudgetsCompanion.insert(
+        categoryId: foodId,
+        year: 2026,
+        month: 8,
+        maxCost: const Value(5000),
+      ),
     );
     await budgetRepo.upsert(
-      BudgetsCompanion.insert(categoryId: foodId, year: 2026, month: 9, maxCost: 9999),
+      BudgetsCompanion.insert(
+        categoryId: foodId,
+        year: 2026,
+        month: 9,
+        maxCost: const Value(9999),
+      ),
     );
 
     await budgetRepo.copyForward(

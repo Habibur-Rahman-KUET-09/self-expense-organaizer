@@ -13,14 +13,26 @@ double thresholdTriggerValue({
   return thresholdBaseValue * (thresholdPercent / 100);
 }
 
-/// Picks minCost or maxCost as the threshold base per the budget's
-/// [ThresholdBase] setting (FR-4.2).
+/// A category's own effective budget ceiling: Max if it's set, otherwise
+/// Min. Min is required on every budget, so this always yields a value.
+/// Used anywhere a single "this category's budget" figure is needed —
+/// the strikethrough/over-budget check, per-category progress, and as the
+/// fallback when a threshold is configured against a Max that isn't set.
+double effectiveCeiling({required double minCost, required double? maxCost}) {
+  return maxCost ?? minCost;
+}
+
+/// Picks minCost or the effective ceiling as the threshold base per the
+/// budget's [ThresholdBase] setting (FR-4.2). Falls back to minCost when
+/// [ThresholdBase.max] is selected but no Max was set.
 double resolveThresholdBase({
   required ThresholdBase base,
   required double minCost,
-  required double maxCost,
+  required double? maxCost,
 }) {
-  return base == ThresholdBase.min ? minCost : maxCost;
+  return base == ThresholdBase.min
+      ? minCost
+      : effectiveCeiling(minCost: minCost, maxCost: maxCost);
 }
 
 /// Section 7 #4: Alert Condition = Cumulative Actual Spend ≥ Threshold

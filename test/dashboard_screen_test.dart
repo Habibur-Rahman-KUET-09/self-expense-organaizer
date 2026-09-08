@@ -58,7 +58,7 @@ void main() {
           year: now.year,
           month: now.month,
           minCost: const Value(1000),
-          maxCost: 2000,
+          maxCost: const Value(2000),
           thresholdPercent: const Value(50), // trigger = 1000
           thresholdBase: const Value(ThresholdBase.max),
         ),
@@ -71,7 +71,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('৳1,500'), findsOneWidget);
-      expect(find.textContaining('of ৳2,000 budgeted'), findsOneWidget);
+      // Total Budget is Min-only by design (Max never enters), so it's
+      // 1000 here even though the category's Max is 2000.
+      expect(find.textContaining('of ৳1,000 budgeted'), findsOneWidget);
       expect(find.textContaining('Daily allowance:'), findsOneWidget);
 
       // actual (1500) is 150% of the trigger value (1000) -> exceeded.

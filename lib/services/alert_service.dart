@@ -26,6 +26,9 @@ class AlertService {
   }) async {
     final budget = await _budgetRepo.getForCategoryMonth(categoryId, year, month);
     if (budget == null) return null;
+    // Tracking/calculation (actual spend, dashboard progress, strikethrough)
+    // stays normal regardless — this only skips the alert banner/log.
+    if (budget.noAlert) return null;
 
     final start = startOfMonth(year, month);
     final end = startOfNextMonth(year, month);

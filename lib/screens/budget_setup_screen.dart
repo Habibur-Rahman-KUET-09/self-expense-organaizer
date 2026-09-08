@@ -5,10 +5,12 @@ import 'package:intl/intl.dart';
 
 import '../constants.dart';
 import '../db/database.dart';
+import '../models/budget_extensions.dart';
 import '../models/enums.dart';
 import '../providers/budget_providers.dart';
 import '../providers/category_providers.dart';
 import '../providers/database_providers.dart';
+import '../providers/expense_providers.dart';
 import '../widgets/budget_editor_sheet.dart';
 import '../widgets/category_form_dialog.dart';
 import '../widgets/month_selector.dart';
@@ -294,15 +296,32 @@ class _BudgetRow extends ConsumerWidget {
           );
         }
         final baseLabel = budget.thresholdBase == ThresholdBase.min ? 'Min' : 'Max';
+        final amountLabel = budget.maxCost != null
+            ? '${_currencyFormat.format(budget.minCost)} – '
+                  '${_currencyFormat.format(budget.maxCost)}'
+            : _currencyFormat.format(budget.minCost);
+        final actualAsync = ref.watch(
+          categoryActualForMonthProvider((
+            categoryId: categoryId,
+            year: monthKey.year,
+            month: monthKey.month,
+          )),
+        );
+        final isOverBudget =
+            actualAsync.value != null &&
+            budget.effectiveCeiling > 0 &&
+            actualAsync.value! >= budget.effectiveCeiling;
+
         return InkWell(
           onTap: () => _editBudget(context, ref, budget),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Text(
-              '${_currencyFormat.format(budget.minCost)} – '
-              '${_currencyFormat.format(budget.maxCost)} '
-              '· alert at ${budget.thresholdPercent.round()}% of $baseLabel',
-              style: Theme.of(context).textTheme.bodySmall,
+              '$amountLabel · alert at ${budget.thresholdPercent.round()}% of '
+              '$baseLabel${budget.noAlert ? ' (muted)' : ''}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                decoration: isOverBudget ? TextDecoration.lineThrough : null,
+              ),
             ),
           ),
         );
@@ -327,9 +346,10 @@ class _BudgetRow extends ConsumerWidget {
         year: monthKey.year,
         month: monthKey.month,
         minCost: Value(result.minCost),
-        maxCost: result.maxCost,
+        maxCost: Value(result.maxCost),
         thresholdPercent: Value(result.thresholdPercent),
         thresholdBase: Value(result.thresholdBase),
+        noAlert: Value(result.noAlert),
       ),
     );
   }
