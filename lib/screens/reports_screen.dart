@@ -159,7 +159,7 @@ class _ReportPeriodView extends ConsumerWidget {
         Text('Comparison', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
         SizedBox(
-          height: 180,
+          height: 200,
           child: currentAsync.when(
             data: (current) => previousAsync.when(
               data: (previous) => _ComparisonBarChart(
@@ -264,8 +264,9 @@ class _ComparisonBarChart extends StatelessWidget {
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
+              reservedSize: 32,
               getTitlesWidget: (value, meta) => Padding(
-                padding: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.only(top: 12),
                 child: Text(value == 0 ? 'Previous' : 'Current'),
               ),
             ),

@@ -107,16 +107,13 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                 _CategoryChip(
                   category: category,
                   selected: _selectedTopCategory?.id == category.id,
-                  onSelected: () => setState(() {
-                    _selectedTopCategory = category;
-                    _selectedSubCategory = null;
-                  }),
+                  onSelected: () => _selectTopCategory(category),
                 ),
             ],
           ),
           if (_selectedTopCategory != null) ...[
             const SizedBox(height: 16),
-            Text('Sub-category (optional)', style: Theme.of(context).textTheme.labelLarge),
+            Text('Sub-category', style: Theme.of(context).textTheme.labelLarge),
             const SizedBox(height: 8),
             Consumer(
               builder: (context, ref, _) {
@@ -134,6 +131,10 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                         style: Theme.of(context).textTheme.bodySmall,
                       );
                     }
+                    // A sub-category is required once any exist for this
+                    // category — see _selectTopCategory, which already made
+                    // the user pick one before landing here. Tapping a chip
+                    // only switches the pick; it can no longer be cleared.
                     return Wrap(
                       spacing: 8,
                       runSpacing: 8,
@@ -142,10 +143,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                           _CategoryChip(
                             category: sub,
                             selected: _selectedSubCategory?.id == sub.id,
-                            onSelected: () => setState(
-                              () => _selectedSubCategory =
-                                  _selectedSubCategory?.id == sub.id ? null : sub,
-                            ),
+                            onSelected: () => setState(() => _selectedSubCategory = sub),
                           ),
                       ],
                     );
@@ -184,6 +182,62 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
           const SizedBox(height: 8),
           _RecentExpensesList(onEdit: _loadForEditing),
         ],
+      ),
+    );
+  }
+
+  /// A category with sub-categories can't take an expense directly — the
+  /// user must pick one of its sub-categories first (via [_pickSubCategory]).
+  /// A category with none behaves as before: selecting it is enough.
+  Future<void> _selectTopCategory(Category category) async {
+    final subs = await ref.read(
+      subCategoriesProvider((parentId: category.id, activeOnly: true)).future,
+    );
+    if (!mounted) return;
+
+    if (subs.isEmpty) {
+      setState(() {
+        _selectedTopCategory = category;
+        _selectedSubCategory = null;
+      });
+      return;
+    }
+
+    final chosen = await _pickSubCategory(category, subs);
+    if (chosen == null || !mounted) return; // cancelled: leave selection as-is
+    setState(() {
+      _selectedTopCategory = category;
+      _selectedSubCategory = chosen;
+    });
+  }
+
+  Future<Category?> _pickSubCategory(Category topCategory, List<Category> subs) {
+    return showModalBottomSheet<Category>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text(
+                'Select a sub-category for ${topCategory.name}',
+                style: Theme.of(sheetContext).textTheme.titleMedium,
+              ),
+            ),
+            for (final sub in subs)
+              ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: Color(sub.colorValue),
+                  radius: 12,
+                ),
+                title: Text(sub.name),
+                onTap: () => Navigator.of(sheetContext).pop(sub),
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }
@@ -329,6 +383,11 @@ class _RecentExpensesList extends ConsumerWidget {
               _ExpenseTile(
                 expense: expense,
                 category: categoriesById[expense.categoryId],
+                parentCategory: () {
+                  final category = categoriesById[expense.categoryId];
+                  if (category?.parentId == null) return null;
+                  return categoriesById[category!.parentId!];
+                }(),
                 onEdit: () => onEdit(expense),
               ),
           ],
@@ -344,14 +403,27 @@ class _RecentExpensesList extends ConsumerWidget {
 }
 
 class _ExpenseTile extends ConsumerWidget {
-  const _ExpenseTile({required this.expense, required this.category, required this.onEdit});
+  const _ExpenseTile({
+    required this.expense,
+    required this.category,
+    required this.parentCategory,
+    required this.onEdit,
+  });
 
   final Expense expense;
   final Category? category;
+  // Set only when [category] is a sub-category, so the tile can show the
+  // "Main category › Sub-category" hierarchy instead of a bare name that
+  // could be mistaken for a top-level category.
+  final Category? parentCategory;
   final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final categoryLabel = parentCategory != null
+        ? '${parentCategory!.name} › ${category?.name ?? 'Unknown'}'
+        : (category?.name ?? 'Unknown category');
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: ListTile(
@@ -365,7 +437,7 @@ class _ExpenseTile extends ConsumerWidget {
         title: Text(_currencyFormat.format(expense.amount)),
         subtitle: Text(
           [
-            category?.name ?? 'Unknown category',
+            categoryLabel,
             _dateFormat.format(expense.date),
             if ((expense.note ?? '').isNotEmpty) expense.note!,
           ].join(' · '),
