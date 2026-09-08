@@ -23,19 +23,20 @@ final dashboardSummaryProvider = FutureProvider.autoDispose<DashboardSummary>((
   // Pure reactive trigger — see expensesInMonthProvider's doc comment.
   ref.watch(expensesInMonthProvider(monthKey));
 
-  final budgetRepo = ref.watch(budgetRepositoryProvider);
   final expenseRepo = ref.watch(expenseRepositoryProvider);
   final categoryRepo = ref.watch(categoryRepositoryProvider);
   final alertService = ref.watch(alertServiceProvider);
-
-  final budgets = await ref.watch(budgetsForMonthProvider(monthKey).future);
-  final totals = await budgetRepo.totalsForMonth(year, month);
+  final rollupService = ref.watch(budgetRollupServiceProvider);
 
   final start = startOfMonth(year, month);
   final end = startOfNextMonth(year, month);
   final totalActual = await expenseRepo.sumInRange(start, end);
 
-  final progress = <CategoryProgress>[];
+  // Any-level budgeted categories, for the Active Alerts banner — alerts
+  // still fire per individual (sub-)category using its own threshold
+  // settings, unaffected by the rollup below.
+  final budgets = await ref.watch(budgetsForMonthProvider(monthKey).future);
+  final alertProgress = <CategoryProgress>[];
   for (final budget in budgets) {
     final category = await categoryRepo.getById(budget.categoryId);
     if (category == null) continue;
@@ -49,7 +50,7 @@ final dashboardSummaryProvider = FutureProvider.autoDispose<DashboardSummary>((
       year: year,
       month: month,
     );
-    progress.add(
+    alertProgress.add(
       CategoryProgress(
         category: category,
         budget: budget,
@@ -59,11 +60,37 @@ final dashboardSummaryProvider = FutureProvider.autoDispose<DashboardSummary>((
     );
   }
 
+  // Top-level-only, rolled-up categories (sub-category spend/budget folded
+  // into their parent) for Top Spending and the Total Budget figure — see
+  // BudgetRollupService for why.
+  final topLevelCategories = await categoryRepo.getTopLevel();
+  final topLevelProgress = <TopLevelBudgetProgress>[];
+  var totalBudget = 0.0;
+  for (final category in topLevelCategories) {
+    final effective = await rollupService.effectiveBudgetForCategory(
+      category.id,
+      year,
+      month,
+    );
+    if (!effective.hasBudget) continue;
+    final actual = await rollupService.rolledUpActual(category.id, year, month);
+    totalBudget += effective.min;
+    topLevelProgress.add(
+      TopLevelBudgetProgress(
+        category: category,
+        effectiveMin: effective.min,
+        effectiveMax: effective.max,
+        fromSubCategories: effective.fromSubCategories,
+        actual: actual,
+      ),
+    );
+  }
+
   final daysTotal = daysInMonth(year, month);
   final daysElapsed = daysElapsedInMonth(now, year: year, month: month);
   // Dashboard's Total Budget is always the sum of Minimums (see
   // DashboardSummary.totalBudget) — Max never factors into it.
-  final allowance = dailyAllowance(monthlyBudget: totals.min, daysInMonth: daysTotal);
+  final allowance = dailyAllowance(monthlyBudget: totalBudget, daysInMonth: daysTotal);
   final allowed = cumulativeAllowed(
     dailyAllowanceValue: allowance,
     daysElapsed: daysElapsed,
@@ -75,10 +102,11 @@ final dashboardSummaryProvider = FutureProvider.autoDispose<DashboardSummary>((
 
   return DashboardSummary(
     totalActual: totalActual,
-    totalBudget: totals.min,
+    totalBudget: totalBudget,
     pace: pace,
     dailyAllowanceValue: allowance,
     cumulativeAllowedValue: allowed,
-    categoryProgress: progress,
+    categoryProgress: alertProgress,
+    topLevelProgress: topLevelProgress,
   );
 });

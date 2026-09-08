@@ -9,6 +9,7 @@ import '../logic/trend_projection.dart';
 import '../models/enums.dart';
 import '../providers/category_providers.dart';
 import '../providers/report_providers.dart';
+import '../widgets/export_menu_button.dart';
 
 final _currencyFormat = NumberFormat.currency(symbol: currencySymbol, decimalDigits: 0);
 final _compactCurrencyFormat = NumberFormat.compactCurrency(
@@ -55,6 +56,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Reports'),
+        actions: const [ExportMenuButton()],
         bottom: TabBar(
           controller: _tabController,
           tabs: const [

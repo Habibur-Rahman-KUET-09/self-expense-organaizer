@@ -146,16 +146,17 @@ void main() {
       );
 
       final summary = await _readDashboardSummary(container);
-      final foodProgress = summary.categoryProgress.single;
+      final topLevelFood = summary.topLevelProgress.single;
+      final alertFood = summary.categoryProgress.single;
 
       // Tracking/calculation stays normal: actual, percentage, and the
       // strikethrough indicator are all still computed.
-      expect(foodProgress.actual, 1500);
-      expect(foodProgress.percentOfBudget, 75); // 1500 / 2000 effective ceiling
-      expect(foodProgress.isOverBudget, isFalse); // 1500 < 2000 ceiling
+      expect(topLevelFood.actual, 1500);
+      expect(topLevelFood.percentOfBudget, 75); // 1500 / 2000 effective ceiling
+      expect(topLevelFood.isOverBudget, isFalse); // 1500 < 2000 ceiling
 
       // But no alert fires, and nothing was logged.
-      expect(foodProgress.severity, isNull);
+      expect(alertFood.severity, isNull);
       expect(summary.activeAlerts, isEmpty);
       final loggedAlert = await container
           .read(alertRepositoryProvider)

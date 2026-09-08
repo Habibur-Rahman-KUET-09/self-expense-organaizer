@@ -2,9 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../logic/period_utils.dart';
 import '../logic/trend_projection.dart';
-import '../models/budget_extensions.dart';
 import '../models/enums.dart';
 import 'database_providers.dart';
+import 'service_providers.dart';
 
 typedef PeriodKey = ({ReportPeriod period, int offset});
 
@@ -64,34 +64,35 @@ final periodProjectionProvider = FutureProvider.autoDispose
 
 /// Budgets are only defined per category per month (Section 6), so a
 /// week/quarter/year's "max budget" is approximated as the sum of the
-/// monthly effective ceilings (Max if set, else Min — see
-/// BudgetCeiling.effectiveCeiling) for every calendar month the period
+/// monthly effective ceilings for every calendar month the period
 /// overlaps. For a week that straddles two months this double-counts each
 /// month's full budget rather than prorating by overlap — an accepted
 /// Phase 1 simplification given budgets have no finer-grained native unit.
+///
+/// Uses BudgetRollupService throughout so a sub-category's budget is only
+/// ever counted once (via its parent when [categoryId] is null, or on its
+/// own when [categoryId] names it directly) — never double-counted against
+/// a stale budget its parent might still separately have on file.
 Future<double> _maxBudgetForPeriod(
   Ref ref,
   ReportPeriod period,
   int offset, {
   int? categoryId,
 }) async {
-  final budgetRepo = ref.watch(budgetRepositoryProvider);
+  final rollup = ref.watch(budgetRollupServiceProvider);
   final (start, end) = reportPeriodRange(period, DateTime.now(), offset);
   var total = 0.0;
   var cursor = DateTime(start.year, start.month);
   while (cursor.isBefore(end)) {
     if (categoryId == null) {
-      final budgets = await budgetRepo.getForMonth(cursor.year, cursor.month);
-      for (final budget in budgets) {
-        total += budget.effectiveCeiling;
-      }
+      total += await rollup.totalCeilingBudgetForMonth(cursor.year, cursor.month);
     } else {
-      final budget = await budgetRepo.getForCategoryMonth(
+      final effective = await rollup.effectiveBudgetForCategory(
         categoryId,
         cursor.year,
         cursor.month,
       );
-      total += budget?.effectiveCeiling ?? 0;
+      total += effective.ceiling;
     }
     cursor = DateTime(cursor.year, cursor.month + 1);
   }

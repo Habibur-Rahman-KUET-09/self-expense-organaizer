@@ -34,6 +34,17 @@ void main() {
 
     expect(find.text('No categories yet — tap + to add one.'), findsOneWidget);
 
+    // Export action is present (NFR-6). Only open the menu — actually
+    // selecting an item would hit share_plus's platform channel, which
+    // isn't mocked in this test environment.
+    expect(find.byIcon(Icons.ios_share), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.ios_share));
+    await tester.pumpAndSettle();
+    expect(find.text('Export full backup (JSON)'), findsOneWidget);
+    expect(find.text('Export expenses (CSV)'), findsOneWidget);
+    await tester.tapAt(const Offset(10, 10)); // dismiss the menu
+    await tester.pumpAndSettle();
+
     // Add a category via the FAB dialog.
     await tester.tap(find.byIcon(Icons.add));
     await tester.pumpAndSettle();
@@ -53,8 +64,13 @@ void main() {
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('৳3,000'), findsOneWidget);
-    expect(find.textContaining('৳5,000'), findsOneWidget);
+    // Target the category's own budget-row text specifically ("alert at"
+    // only appears there, not in the Total Min/Max stat card above it).
+    final budgetRowFinder = find.textContaining('alert at');
+    expect(budgetRowFinder, findsOneWidget);
+    final budgetRowText = tester.widget<Text>(budgetRowFinder).data!;
+    expect(budgetRowText, contains('৳3,000'));
+    expect(budgetRowText, contains('৳5,000'));
 
     // Swap out the widget tree first, then dispose the (unowned) container
     // ourselves and pump to flush drift's cancellation timer, all while
@@ -92,8 +108,11 @@ void main() {
       await tester.tap(find.text('Save'));
       await tester.pumpAndSettle();
 
-      final budgetTextFinder = find.textContaining('৳1,000');
+      // Target the category's own budget-row text specifically ("alert at"
+      // only appears there, not in the Total Min/Max stat card above it).
+      final budgetTextFinder = find.textContaining('alert at');
       expect(budgetTextFinder, findsOneWidget);
+      expect(tester.widget<Text>(budgetTextFinder).data, contains('৳1,000'));
       expect(
         tester.widget<Text>(budgetTextFinder).data,
         isNot(contains('–')), // no range dash when Max isn't set

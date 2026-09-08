@@ -24,7 +24,7 @@ class DashboardScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Dashboard')),
       body: summaryAsync.when(
         data: (summary) {
-          if (summary.totalBudget == 0 && summary.categoryProgress.isEmpty) {
+          if (summary.totalBudget == 0 && summary.topLevelProgress.isEmpty) {
             return _EmptyState(
               onSetUpBudgets: () =>
                   ref.read(bottomNavIndexProvider.notifier).state = 2,
@@ -227,7 +227,7 @@ class _AlertBanner extends StatelessWidget {
 class _CategoryProgressTile extends StatelessWidget {
   const _CategoryProgressTile({required this.progress});
 
-  final CategoryProgress progress;
+  final TopLevelBudgetProgress progress;
 
   @override
   Widget build(BuildContext context) {
@@ -253,12 +253,21 @@ class _CategoryProgressTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Always a top-level category — never a sub-category —
+                  // so there's nothing here to mistake for one.
                   Text(
                     progress.category.name,
                     style: progress.isOverBudget
                         ? const TextStyle(decoration: TextDecoration.lineThrough)
                         : null,
                   ),
+                  if (progress.fromSubCategories)
+                    Text(
+                      'Includes sub-categories',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
                   const SizedBox(height: 4),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(6),

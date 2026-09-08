@@ -42,6 +42,16 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      // Export action is present (NFR-6). Only open the menu — actually
+      // selecting an item would hit share_plus's platform channel, which
+      // isn't mocked in this test environment.
+      expect(find.byIcon(Icons.ios_share), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.ios_share));
+      await tester.pumpAndSettle();
+      expect(find.text('Export full backup (JSON)'), findsOneWidget);
+      await tester.tapAt(const Offset(10, 10)); // dismiss the menu
+      await tester.pumpAndSettle();
+
       // Starts on Week (no projection card there). The column of charts is
       // taller than the test viewport, so scroll each heading into view
       // before asserting on it (ListView only mounts on-screen children).

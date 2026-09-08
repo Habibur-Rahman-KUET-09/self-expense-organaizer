@@ -40,6 +40,30 @@ class CategoryRepository {
     _db.categories,
   )..where((c) => c.id.equals(id))).getSingleOrNull();
 
+  /// One-off (non-reactive) equivalent of [watchTopLevel], for services that
+  /// compute an aggregate once rather than watching it.
+  Future<List<Category>> getTopLevel({bool activeOnly = true}) {
+    final query = _db.select(_db.categories)
+      ..where((c) => c.parentId.isNull());
+    if (activeOnly) {
+      query.where((c) => c.isActive.equals(true));
+    }
+    return query.get();
+  }
+
+  /// One-off (non-reactive) equivalent of [watchSubCategories].
+  Future<List<Category>> getSubCategories(
+    int parentId, {
+    bool activeOnly = true,
+  }) {
+    final query = _db.select(_db.categories)
+      ..where((c) => c.parentId.equals(parentId));
+    if (activeOnly) {
+      query.where((c) => c.isActive.equals(true));
+    }
+    return query.get();
+  }
+
   Future<int> add({
     required String name,
     int? parentId,

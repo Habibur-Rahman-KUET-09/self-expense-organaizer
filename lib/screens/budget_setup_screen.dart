@@ -13,9 +13,11 @@ import '../providers/database_providers.dart';
 import '../providers/expense_providers.dart';
 import '../widgets/budget_editor_sheet.dart';
 import '../widgets/category_form_dialog.dart';
+import '../widgets/export_menu_button.dart';
 import '../widgets/month_selector.dart';
 
 final _currencyFormat = NumberFormat.currency(symbol: currencySymbol, decimalDigits: 0);
+const _hiddenAmountPlaceholder = '•••••';
 
 /// FR-1/FR-2/FR-4: category & sub-category CRUD plus per-category monthly
 /// min/max budgets and threshold settings.
@@ -29,6 +31,10 @@ class BudgetSetupScreen extends ConsumerStatefulWidget {
 class _BudgetSetupScreenState extends ConsumerState<BudgetSetupScreen> {
   late DateTime _selectedMonth;
   bool _showArchived = false;
+
+  /// The eye button: hides budget *amounts* only — category/sub-category
+  /// names and structure stay visible either way.
+  bool _hideAmounts = false;
 
   @override
   void initState() {
@@ -45,12 +51,18 @@ class _BudgetSetupScreenState extends ConsumerState<BudgetSetupScreen> {
     final categoriesAsync = ref.watch(
       topLevelCategoriesProvider(!_showArchived),
     );
-    final totalsAsync = ref.watch(monthlyBudgetTotalsProvider(_monthKey));
+    final totalsAsync = ref.watch(monthlyRollupTotalsProvider(_monthKey));
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Budget Setup'),
         actions: [
+          const ExportMenuButton(),
+          IconButton(
+            tooltip: _hideAmounts ? 'Show amounts' : 'Hide amounts',
+            icon: Icon(_hideAmounts ? Icons.visibility_off : Icons.visibility),
+            onPressed: () => setState(() => _hideAmounts = !_hideAmounts),
+          ),
           IconButton(
             tooltip: 'Copy previous month\'s budgets forward',
             icon: const Icon(Icons.content_copy),
@@ -58,7 +70,9 @@ class _BudgetSetupScreenState extends ConsumerState<BudgetSetupScreen> {
           ),
           IconButton(
             tooltip: _showArchived ? 'Hide archived' : 'Show archived',
-            icon: Icon(_showArchived ? Icons.visibility_off : Icons.visibility),
+            icon: Icon(
+              _showArchived ? Icons.unarchive_outlined : Icons.archive_outlined,
+            ),
             onPressed: () => setState(() => _showArchived = !_showArchived),
           ),
         ],
@@ -81,8 +95,16 @@ class _BudgetSetupScreenState extends ConsumerState<BudgetSetupScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _TotalStat(label: 'Total Min', value: totals.min),
-                      _TotalStat(label: 'Total Max', value: totals.max),
+                      _TotalStat(
+                        label: 'Total Min',
+                        value: totals.min,
+                        hidden: _hideAmounts,
+                      ),
+                      _TotalStat(
+                        label: 'Total Max',
+                        value: totals.max,
+                        hidden: _hideAmounts,
+                      ),
                     ],
                   ),
                 ),
@@ -106,6 +128,7 @@ class _BudgetSetupScreenState extends ConsumerState<BudgetSetupScreen> {
                     category: categories[index],
                     monthKey: _monthKey,
                     showArchived: _showArchived,
+                    hideAmounts: _hideAmounts,
                   ),
                 );
               },
@@ -150,10 +173,11 @@ class _BudgetSetupScreenState extends ConsumerState<BudgetSetupScreen> {
 }
 
 class _TotalStat extends StatelessWidget {
-  const _TotalStat({required this.label, required this.value});
+  const _TotalStat({required this.label, required this.value, required this.hidden});
 
   final String label;
   final double value;
+  final bool hidden;
 
   @override
   Widget build(BuildContext context) {
@@ -161,7 +185,7 @@ class _TotalStat extends StatelessWidget {
       children: [
         Text(label, style: Theme.of(context).textTheme.labelMedium),
         Text(
-          _currencyFormat.format(value),
+          hidden ? _hiddenAmountPlaceholder : _currencyFormat.format(value),
           style: Theme.of(context).textTheme.titleLarge,
         ),
       ],
@@ -174,11 +198,13 @@ class _CategorySection extends ConsumerWidget {
     required this.category,
     required this.monthKey,
     required this.showArchived,
+    required this.hideAmounts,
   });
 
   final Category category;
   final MonthKey monthKey;
   final bool showArchived;
+  final bool hideAmounts;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -199,14 +225,22 @@ class _CategorySection extends ConsumerWidget {
                 ? null
                 : const TextStyle(decoration: TextDecoration.lineThrough),
           ),
-          subtitle: _BudgetRow(categoryId: category.id, monthKey: monthKey),
+          subtitle: _ParentBudgetRow(
+            categoryId: category.id,
+            monthKey: monthKey,
+            hideAmounts: hideAmounts,
+          ),
           trailing: _CategoryMenu(category: category),
           children: [
             subCategoriesAsync.when(
               data: (subs) => Column(
                 children: [
                   for (final sub in subs)
-                    _SubCategoryTile(category: sub, monthKey: monthKey),
+                    _SubCategoryTile(
+                      category: sub,
+                      monthKey: monthKey,
+                      hideAmounts: hideAmounts,
+                    ),
                 ],
               ),
               loading: () => const Padding(
@@ -244,37 +278,139 @@ class _CategorySection extends ConsumerWidget {
   }
 }
 
+/// A sub-category row, visually set apart from its parent's header row with
+/// a tinted background and a colored left border (rather than just an
+/// indent), so it reads unmistakably as "belongs to the category above",
+/// not another top-level category.
 class _SubCategoryTile extends ConsumerWidget {
-  const _SubCategoryTile({required this.category, required this.monthKey});
+  const _SubCategoryTile({
+    required this.category,
+    required this.monthKey,
+    required this.hideAmounts,
+  });
 
   final Category category;
   final MonthKey monthKey;
+  final bool hideAmounts;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ListTile(
-      contentPadding: const EdgeInsets.only(left: 32, right: 8),
-      leading: CircleAvatar(
-        radius: 12,
-        backgroundColor: Color(category.colorValue),
+    final tint = Color(category.colorValue);
+    return Container(
+      margin: const EdgeInsets.only(left: 12, right: 8, bottom: 2),
+      decoration: BoxDecoration(
+        color: tint.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(8),
+        border: Border(left: BorderSide(color: tint, width: 3)),
       ),
-      title: Text(
-        category.name,
-        style: category.isActive
-            ? null
-            : const TextStyle(decoration: TextDecoration.lineThrough),
+      child: ListTile(
+        dense: true,
+        contentPadding: const EdgeInsets.only(left: 12, right: 8),
+        leading: CircleAvatar(radius: 10, backgroundColor: tint),
+        title: Row(
+          children: [
+            Icon(Icons.subdirectory_arrow_right, size: 14, color: tint),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Text(
+                category.name,
+                style: (category.isActive
+                        ? const TextStyle()
+                        : const TextStyle(decoration: TextDecoration.lineThrough))
+                    .copyWith(fontStyle: FontStyle.italic),
+              ),
+            ),
+          ],
+        ),
+        subtitle: _BudgetRow(
+          categoryId: category.id,
+          monthKey: monthKey,
+          hideAmounts: hideAmounts,
+        ),
+        trailing: _CategoryMenu(category: category),
       ),
-      subtitle: _BudgetRow(categoryId: category.id, monthKey: monthKey),
-      trailing: _CategoryMenu(category: category),
+    );
+  }
+}
+
+/// The category-level budget row: editable when the category sets its own
+/// budget directly, or a read-only computed summary when it has any
+/// sub-category budgets — per product decision, those are summed to *become*
+/// this category's budget, so editing it directly wouldn't do anything.
+class _ParentBudgetRow extends ConsumerWidget {
+  const _ParentBudgetRow({
+    required this.categoryId,
+    required this.monthKey,
+    required this.hideAmounts,
+  });
+
+  final int categoryId;
+  final MonthKey monthKey;
+  final bool hideAmounts;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final effectiveAsync = ref.watch(
+      effectiveBudgetForCategoryProvider((
+        categoryId: categoryId,
+        year: monthKey.year,
+        month: monthKey.month,
+      )),
+    );
+
+    return effectiveAsync.when(
+      data: (effective) {
+        if (!effective.fromSubCategories) {
+          return _BudgetRow(
+            categoryId: categoryId,
+            monthKey: monthKey,
+            hideAmounts: hideAmounts,
+          );
+        }
+        if (hideAmounts) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 4),
+            child: Text(_hiddenAmountPlaceholder),
+          );
+        }
+        final label = effective.max != null
+            ? '${_currencyFormat.format(effective.min)} – '
+                  '${_currencyFormat.format(effective.max)}'
+            : _currencyFormat.format(effective.min);
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.functions, size: 14, color: Theme.of(context).colorScheme.primary),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  'Sum of sub-categories: $label',
+                  style: Theme.of(context).textTheme.bodySmall,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () => const SizedBox(height: 16),
+      error: (error, _) => Text('Error: $error'),
     );
   }
 }
 
 class _BudgetRow extends ConsumerWidget {
-  const _BudgetRow({required this.categoryId, required this.monthKey});
+  const _BudgetRow({
+    required this.categoryId,
+    required this.monthKey,
+    required this.hideAmounts,
+  });
 
   final int categoryId;
   final MonthKey monthKey;
+  final bool hideAmounts;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -293,6 +429,15 @@ class _BudgetRow extends ConsumerWidget {
             style: TextButton.styleFrom(padding: EdgeInsets.zero, alignment: Alignment.centerLeft),
             onPressed: () => _editBudget(context, ref, null),
             child: const Text('Set budget'),
+          );
+        }
+        if (hideAmounts) {
+          return InkWell(
+            onTap: () => _editBudget(context, ref, budget),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(vertical: 4),
+              child: Text(_hiddenAmountPlaceholder),
+            ),
           );
         }
         final baseLabel = budget.thresholdBase == ThresholdBase.min ? 'Min' : 'Max';
