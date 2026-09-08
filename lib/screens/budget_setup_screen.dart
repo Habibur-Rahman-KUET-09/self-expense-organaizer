@@ -13,7 +13,7 @@ import '../providers/database_providers.dart';
 import '../providers/expense_providers.dart';
 import '../widgets/budget_editor_sheet.dart';
 import '../widgets/category_form_dialog.dart';
-import '../widgets/export_menu_button.dart';
+import '../widgets/backup_menu_button.dart';
 import '../widgets/month_selector.dart';
 
 final _currencyFormat = NumberFormat.currency(symbol: currencySymbol, decimalDigits: 0);
@@ -57,7 +57,7 @@ class _BudgetSetupScreenState extends ConsumerState<BudgetSetupScreen> {
       appBar: AppBar(
         title: const Text('Budget Setup'),
         actions: [
-          const ExportMenuButton(),
+          const BackupMenuButton(),
           IconButton(
             tooltip: _hideAmounts ? 'Show amounts' : 'Hide amounts',
             icon: Icon(_hideAmounts ? Icons.visibility_off : Icons.visibility),
@@ -379,20 +379,7 @@ class _ParentBudgetRow extends ConsumerWidget {
             : _currencyFormat.format(effective.min);
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.functions, size: 14, color: Theme.of(context).colorScheme.primary),
-              const SizedBox(width: 4),
-              Flexible(
-                child: Text(
-                  'Sum of sub-categories: $label',
-                  style: Theme.of(context).textTheme.bodySmall,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
+          child: Text(label, style: Theme.of(context).textTheme.bodySmall),
         );
       },
       loading: () => const SizedBox(height: 16),

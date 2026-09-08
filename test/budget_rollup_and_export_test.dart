@@ -7,7 +7,7 @@ import 'package:expense_tracker/models/dashboard_summary.dart';
 import 'package:expense_tracker/providers/dashboard_providers.dart';
 import 'package:expense_tracker/providers/database_providers.dart';
 import 'package:expense_tracker/providers/service_providers.dart';
-import 'package:expense_tracker/services/export_service.dart';
+import 'package:expense_tracker/services/backup_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -20,6 +20,12 @@ Future<DashboardSummary> _readDashboardSummary(ProviderContainer container) {
 }
 
 void main() {
+  // A few tests below deliberately open more than one AppDatabase at once
+  // (e.g. restoring into a fresh database to prove it doesn't touch the
+  // original) — each backed by its own isolated in-memory executor, so
+  // drift's "did you mean to do that?" warning doesn't apply here.
+  driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+
   late AppDatabase db;
   late ProviderContainer container;
 
@@ -254,7 +260,7 @@ void main() {
     },
   );
 
-  group('ExportService', () {
+  group('BackupService export', () {
     test('JSON backup includes categories, budgets, expenses, and alerts', () async {
       final categoryRepo = container.read(categoryRepositoryProvider);
       final foodId = await categoryRepo.add(name: 'Food', colorValue: 0xFFE53935);
@@ -275,7 +281,7 @@ void main() {
         ),
       );
 
-      final json = await ExportService(db).buildJsonBackup();
+      final json = await BackupService(db).buildJsonBackup();
       final decoded = jsonDecode(json) as Map<String, dynamic>;
 
       expect(decoded['categories'], hasLength(1));
@@ -297,7 +303,7 @@ void main() {
         ),
       );
 
-      final csv = await ExportService(db).buildExpensesCsv();
+      final csv = await BackupService(db).buildExpensesCsv();
       final lines = csv.trim().split('\n');
 
       expect(lines.first, 'Date,Category,Amount,Note');
@@ -318,9 +324,87 @@ void main() {
         ),
       );
 
-      final csv = await ExportService(db).buildExpensesCsv();
+      final csv = await BackupService(db).buildExpensesCsv();
 
       expect(csv, contains('"milk, eggs"'));
+    });
+  });
+
+  group('BackupService restore', () {
+    test('round-trips a full backup into a fresh database, IDs and links intact', () async {
+      final categoryRepo = container.read(categoryRepositoryProvider);
+      final foodId = await categoryRepo.add(name: 'Food', colorValue: 0xFFE53935);
+      final groceriesId = await categoryRepo.add(name: 'Groceries', parentId: foodId);
+      await container.read(budgetRepositoryProvider).upsert(
+        BudgetsCompanion.insert(
+          categoryId: groceriesId,
+          year: 2026,
+          month: 9,
+          minCost: const Value(1000),
+          maxCost: const Value(2000),
+        ),
+      );
+      await container.read(expenseRepositoryProvider).add(
+        ExpensesCompanion.insert(
+          categoryId: groceriesId,
+          date: DateTime(2026, 9, 10),
+          amount: 250,
+          note: const Value('Lunch'),
+        ),
+      );
+      final json = await BackupService(db).buildJsonBackup();
+
+      final freshDb = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(freshDb.close);
+      final summary = await BackupService(freshDb).restoreFromJson(json);
+
+      expect(summary.categories, 2);
+      expect(summary.budgets, 1);
+      expect(summary.expenses, 1);
+
+      final restoredGroceries = await (freshDb.select(
+        freshDb.categories,
+      )..where((c) => c.id.equals(groceriesId))).getSingle();
+      expect(restoredGroceries.name, 'Groceries');
+      expect(restoredGroceries.parentId, foodId); // link to Food preserved
+
+      final restoredExpense = await freshDb.select(freshDb.expenses).getSingle();
+      expect(restoredExpense.categoryId, groceriesId);
+      expect(restoredExpense.amount, 250);
+      expect(restoredExpense.note, 'Lunch');
+    });
+
+    test('restore replaces existing data rather than merging with it', () async {
+      final categoryRepo = container.read(categoryRepositoryProvider);
+      await categoryRepo.add(name: 'Old Category');
+
+      final otherDb = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(otherDb.close);
+      await otherDb.into(otherDb.categories).insert(
+        CategoriesCompanion.insert(name: 'New Category'),
+      );
+      final backupFromOtherDb = await BackupService(otherDb).buildJsonBackup();
+
+      await BackupService(db).restoreFromJson(backupFromOtherDb);
+
+      final categories = await db.select(db.categories).get();
+      expect(categories.map((c) => c.name), ['New Category']);
+    });
+
+    test('rejects a file that isn\'t a recognizable backup, without touching existing data', () async {
+      await container.read(categoryRepositoryProvider).add(name: 'Untouched');
+
+      expect(
+        () => BackupService(db).restoreFromJson('{"not": "a backup"}'),
+        throwsA(isA<InvalidBackupException>()),
+      );
+      expect(
+        () => BackupService(db).restoreFromJson('not even json'),
+        throwsA(isA<InvalidBackupException>()),
+      );
+
+      final categories = await db.select(db.categories).get();
+      expect(categories.map((c) => c.name), ['Untouched']);
     });
   });
 }

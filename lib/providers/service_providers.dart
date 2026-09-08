@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/alert_service.dart';
+import '../services/backup_service.dart';
 import '../services/budget_rollup_service.dart';
-import '../services/export_service.dart';
 import 'database_providers.dart';
 
 final alertServiceProvider = Provider<AlertService>((ref) {
@@ -21,6 +21,6 @@ final budgetRollupServiceProvider = Provider<BudgetRollupService>((ref) {
   );
 });
 
-final exportServiceProvider = Provider<ExportService>((ref) {
-  return ExportService(ref.watch(appDatabaseProvider));
+final backupServiceProvider = Provider<BackupService>((ref) {
+  return BackupService(ref.watch(appDatabaseProvider));
 });
