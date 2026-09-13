@@ -1,30 +1,43 @@
 import '../db/database.dart';
 
-/// A single habit's Today-screen state plus streak stats (Habit Tracker RS
-/// §4.2/§4.3), computed as of today.
+/// A single habit's state for one calendar day (the Today screen's
+/// [date], which defaults to today but can browse/backfill other days —
+/// Habit Tracker RS §4.2) plus its streak stats. Streaks always reflect
+/// the real current date regardless of which day is being viewed — see
+/// habit_progress_providers.dart's doc comment on habitProgressForDateProvider.
 class HabitProgress {
   const HabitProgress({
     required this.habit,
     required this.category,
-    required this.isDueToday,
-    required this.todayLog,
-    required this.isCompletedToday,
+    required this.isDue,
+    required this.log,
+    required this.isCompleted,
     required this.currentStreak,
     required this.longestStreak,
   });
 
   final Habit habit;
   final HabitCategory? category;
-  final bool isDueToday;
-  final HabitLog? todayLog;
-  final bool isCompletedToday;
+
+  /// Whether [habit] is due on the day this progress was computed for.
+  final bool isDue;
+
+  /// That day's log, if any.
+  final HabitLog? log;
+
+  /// Whether that day's log (if any) satisfies [habit].
+  final bool isCompleted;
   final int currentStreak;
   final int longestStreak;
 }
 
 /// Habit Tracker RS §4.3 "overall daily completion score", e.g. 4/6 habits
-/// done today.
+/// done — for one day.
 typedef DailyHabitScore = ({int done, int total});
+
+/// One day's overall completion score, for the Today tab's weekly overview
+/// chart (Habit Tracker RS §4.3 "trend comparison").
+typedef DailyScorePoint = ({DateTime day, int done, int total});
 
 /// One day's cell for the calendar heatmap (Habit Tracker RS §4.3).
 typedef HeatmapDay = ({DateTime day, bool isDue, bool completed});

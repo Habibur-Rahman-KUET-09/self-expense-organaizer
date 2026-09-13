@@ -7,8 +7,10 @@ import '../providers/database_providers.dart';
 import '../providers/habit_category_providers.dart';
 import '../providers/habit_progress_providers.dart';
 import '../providers/habit_providers.dart';
+import '../widgets/day_selector.dart';
 import '../widgets/habit_category_form_dialog.dart';
 import '../widgets/habit_editor_sheet.dart';
+import '../widgets/habit_overview_chart.dart';
 import '../widgets/habit_tile.dart';
 import 'habit_detail_screen.dart';
 
@@ -103,57 +105,109 @@ class _HabitsScreenState extends ConsumerState<HabitsScreen>
   }
 }
 
-class _TodayTab extends ConsumerWidget {
+class _TodayTab extends ConsumerStatefulWidget {
   const _TodayTab();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final progressAsync = ref.watch(habitProgressListProvider);
+  ConsumerState<_TodayTab> createState() => _TodayTabState();
+}
 
-    return progressAsync.when(
-      data: (progress) {
-        final dueToday = progress.where((p) => p.isDueToday).toList();
-        if (dueToday.isEmpty) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(24),
-              child: Text(
-                'No habits due today. Add one from the Manage tab.',
-                textAlign: TextAlign.center,
-              ),
-            ),
-          );
-        }
-        final done = dueToday.where((p) => p.isCompletedToday).length;
-        return ListView(
-          padding: const EdgeInsets.only(top: 8, bottom: 24),
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Card(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    '$done / ${dueToday.length} habits done today',
-                    style: Theme.of(context).textTheme.titleMedium,
-                    textAlign: TextAlign.center,
+class _TodayTabState extends ConsumerState<_TodayTab> {
+  late DateTime _selectedDate;
+
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _selectedDate = DateTime(now.year, now.month, now.day);
+  }
+
+  bool get _isToday {
+    final now = DateTime.now();
+    return _selectedDate.year == now.year &&
+        _selectedDate.month == now.month &&
+        _selectedDate.day == now.day;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final progressAsync = ref.watch(habitProgressForDateProvider(_selectedDate));
+    final trendAsync = ref.watch(overallWeeklyTrendProvider);
+
+    return Column(
+      children: [
+        const SizedBox(height: 8),
+        DaySelector(date: _selectedDate, onChanged: (d) => setState(() => _selectedDate = d)),
+        Expanded(
+          child: progressAsync.when(
+            data: (progress) {
+              final due = progress.where((p) => p.isDue).toList();
+              final done = due.where((p) => p.isCompleted).length;
+              return ListView(
+                padding: const EdgeInsets.only(bottom: 24),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Card(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(
+                          _isToday
+                              ? '$done / ${due.length} habits done today'
+                              : '$done / ${due.length} habits done',
+                          style: Theme.of(context).textTheme.titleMedium,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ),
-            for (final p in dueToday)
-              HabitTile(
-                progress: p,
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => HabitDetailScreen(habitId: p.habit.id)),
-                ),
-              ),
-          ],
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => Center(child: Text('Error: $error')),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text('Last 7 days', style: Theme.of(context).textTheme.labelLarge),
+                  ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: SizedBox(
+                      height: 140,
+                      child: trendAsync.when(
+                        data: (points) => HabitOverviewChart(points: points),
+                        loading: () => const Center(child: CircularProgressIndicator()),
+                        error: (error, _) => Text('Error: $error'),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  if (due.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(
+                        _isToday
+                            ? 'No habits due today. Add one from the Manage tab.'
+                            : 'No habits due on this day.',
+                        textAlign: TextAlign.center,
+                      ),
+                    )
+                  else
+                    for (final p in due)
+                      HabitTile(
+                        progress: p,
+                        date: _selectedDate,
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => HabitDetailScreen(habitId: p.habit.id),
+                          ),
+                        ),
+                      ),
+                ],
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, _) => Center(child: Text('Error: $error')),
+          ),
+        ),
+      ],
     );
   }
 }

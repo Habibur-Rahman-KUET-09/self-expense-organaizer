@@ -41,16 +41,16 @@ class HabitTile extends ConsumerWidget {
             ? IconButton(
                 iconSize: 32,
                 icon: Icon(
-                  progress.isCompletedToday ? Icons.check_circle : Icons.radio_button_unchecked,
-                  color: progress.isCompletedToday ? color : null,
+                  progress.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
+                  color: progress.isCompleted ? color : null,
                 ),
                 onPressed: () => _toggleBinary(ref),
               )
             : OutlinedButton(
                 onPressed: () => _promptQuantifiable(context, ref),
                 child: Text(
-                  progress.todayLog?.value != null
-                      ? _formatValue(progress.todayLog!.value!, habit.unit)
+                  progress.log?.value != null
+                      ? _formatValue(progress.log!.value!, habit.unit)
                       : 'Log',
                 ),
               ),
@@ -70,7 +70,7 @@ class HabitTile extends ConsumerWidget {
 
   Future<void> _toggleBinary(WidgetRef ref) async {
     final repo = ref.read(habitLogRepositoryProvider);
-    if (progress.isCompletedToday) {
+    if (progress.isCompleted) {
       await repo.deleteForDay(progress.habit.id, _day);
     } else {
       await repo.logDay(habitId: progress.habit.id, date: _day);
@@ -83,7 +83,7 @@ class HabitTile extends ConsumerWidget {
       builder: (dialogContext) => _QuantifiableInputDialog(
         habitName: progress.habit.name,
         unit: progress.habit.unit,
-        initialValue: progress.todayLog?.value,
+        initialValue: progress.log?.value,
       ),
     );
     if (value == null) return;

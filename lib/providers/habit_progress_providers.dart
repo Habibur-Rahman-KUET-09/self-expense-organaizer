@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../db/database.dart';
 import '../logic/frequency_schedule.dart';
 import '../logic/habit_completion.dart';
 import '../logic/period_utils.dart';
@@ -10,99 +11,164 @@ import 'database_providers.dart';
 import 'habit_log_providers.dart';
 import 'habit_providers.dart';
 
-/// Habit Tracker RS §4.2 (Today screen) + §4.3 (streaks) — every active
-/// habit's full progress state as of today, reactive to habit/log changes.
-final habitProgressListProvider = FutureProvider.autoDispose<List<HabitProgress>>((
+/// Habit Tracker RS §4.2 (Today screen, browsable to any past day for
+/// backfilling) + §4.3 (streaks) — every active habit's due/log/completed
+/// state for [date], reactive to habit/log changes. [date] should be
+/// midnight-normalized.
+///
+/// Streaks are always computed as of the *real* current date, never as of
+/// [date] — browsing back to backfill a missed day shows that day's own
+/// due/completed state, but the streak numbers on the tile always reflect
+/// where the habit actually stands today.
+final habitProgressForDateProvider = FutureProvider.autoDispose
+    .family<List<HabitProgress>, DateTime>((ref, date) async {
+      ref.watch(allHabitLogsProvider); // reactive trigger only, see its doc comment
+      final habits = await ref.watch(habitsProvider(true).future);
+      final habitLogRepo = ref.watch(habitLogRepositoryProvider);
+      final habitCategoryRepo = ref.watch(habitCategoryRepositoryProvider);
+
+      final categories = await habitCategoryRepo.getAll(activeOnly: false);
+      final categoriesById = {for (final c in categories) c.id: c};
+
+      final targetDay = DateTime(date.year, date.month, date.day);
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final tomorrow = today.add(const Duration(days: 1));
+
+      final result = <HabitProgress>[];
+      for (final habit in habits) {
+        final schedule = FrequencySchedule.parse(habit.frequencyType, habit.frequencyConfig);
+        final startDate = DateTime(
+          habit.startDate.year,
+          habit.startDate.month,
+          habit.startDate.day,
+        );
+        final isWithinRunOnTarget =
+            !startDate.isAfter(targetDay) &&
+            (habit.endDate == null || !habit.endDate!.isBefore(targetDay));
+        final isDueOnTarget = isWithinRunOnTarget && schedule.isDueOn(targetDay);
+
+        final logs = await habitLogRepo.getForHabitInRange(habit.id, startDate, tomorrow);
+        final logsByDay = {
+          for (final log in logs)
+            DateTime(log.logDate.year, log.logDate.month, log.logDate.day): log,
+        };
+        final targetLog = logsByDay[targetDay];
+        bool completedOn(DateTime day) {
+          final log = logsByDay[day];
+          return isLogComplete(
+            type: habit.type,
+            targetValue: habit.targetValue,
+            hasLog: log != null,
+            loggedValue: log?.value,
+          );
+        }
+
+        final isDueToday =
+            !startDate.isAfter(today) &&
+            (habit.endDate == null || !habit.endDate!.isBefore(today)) &&
+            schedule.isDueOn(today);
+        final StreakResult streak;
+        if (schedule.type.isCountBased) {
+          final ranges = schedule.type == HabitFrequencyType.timesPerWeek
+              ? weeklyPeriodRanges(startDate, today)
+              : monthlyPeriodRanges(startDate, today);
+          streak = periodBasedStreak(
+            periodRanges: ranges,
+            countInRange: (start, endExclusive) => logs
+                .where((l) => !l.logDate.isBefore(start) && l.logDate.isBefore(endExclusive))
+                .length,
+            targetCount: schedule.targetCount,
+          );
+        } else {
+          // A due-but-not-yet-logged "today" shouldn't zero out an otherwise
+          // intact streak before the day is even over — only let today count
+          // against the streak once it actually has a log (see
+          // dayBasedStreak's doc comment on this exact grace period).
+          final asOf = (isDueToday && logsByDay[today] == null)
+              ? today.subtract(const Duration(days: 1))
+              : today;
+          streak = dayBasedStreak(
+            startDate: startDate,
+            asOf: asOf,
+            isDue: schedule.isDueOn,
+            isCompleted: completedOn,
+          );
+        }
+
+        result.add(
+          HabitProgress(
+            habit: habit,
+            category: habit.categoryId != null ? categoriesById[habit.categoryId] : null,
+            isDue: isDueOnTarget,
+            log: targetLog,
+            isCompleted: completedOn(targetDay),
+            currentStreak: streak.current,
+            longestStreak: streak.longest,
+          ),
+        );
+      }
+      return result;
+    });
+
+/// Habit Tracker RS §4.3 "trend comparison" at the whole-habit-set level
+/// (not just one habit) — each of the last 7 days' overall completion
+/// score, oldest first, so the Today tab can show an at-a-glance
+/// improving/declining trend instead of just a single day's snapshot.
+final overallWeeklyTrendProvider = FutureProvider.autoDispose<List<DailyScorePoint>>((
   ref,
 ) async {
-  ref.watch(allHabitLogsProvider); // reactive trigger only, see its doc comment
+  ref.watch(allHabitLogsProvider); // reactive trigger only
   final habits = await ref.watch(habitsProvider(true).future);
   final habitLogRepo = ref.watch(habitLogRepositoryProvider);
-  final habitCategoryRepo = ref.watch(habitCategoryRepositoryProvider);
-
-  final categories = await habitCategoryRepo.getAll(activeOnly: false);
-  final categoriesById = {for (final c in categories) c.id: c};
 
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
-  final tomorrow = today.add(const Duration(days: 1));
+  final windowStart = today.subtract(const Duration(days: 6));
 
-  final result = <HabitProgress>[];
+  final schedulesByHabit = {
+    for (final habit in habits)
+      habit.id: FrequencySchedule.parse(habit.frequencyType, habit.frequencyConfig),
+  };
+  final logsByHabit = <int, Map<DateTime, HabitLog>>{};
   for (final habit in habits) {
-    final schedule = FrequencySchedule.parse(habit.frequencyType, habit.frequencyConfig);
-    final startDate = DateTime(habit.startDate.year, habit.startDate.month, habit.startDate.day);
-    final isWithinRun =
-        !startDate.isAfter(today) && (habit.endDate == null || !habit.endDate!.isBefore(today));
-    final isDueToday = isWithinRun && schedule.isDueOn(today);
-
-    final logs = await habitLogRepo.getForHabitInRange(habit.id, startDate, tomorrow);
-    final logsByDay = {
+    final logs = await habitLogRepo.getForHabitInRange(
+      habit.id,
+      windowStart,
+      today.add(const Duration(days: 1)),
+    );
+    logsByHabit[habit.id] = {
       for (final log in logs)
         DateTime(log.logDate.year, log.logDate.month, log.logDate.day): log,
     };
-    final todayLog = logsByDay[today];
-    bool completedOn(DateTime day) {
-      final log = logsByDay[day];
-      return isLogComplete(
+  }
+
+  final points = <DailyScorePoint>[];
+  for (var day = windowStart; !day.isAfter(today); day = day.add(const Duration(days: 1))) {
+    var due = 0;
+    var done = 0;
+    for (final habit in habits) {
+      final startDate = DateTime(
+        habit.startDate.year,
+        habit.startDate.month,
+        habit.startDate.day,
+      );
+      final withinRun =
+          !startDate.isAfter(day) && (habit.endDate == null || !habit.endDate!.isBefore(day));
+      if (!withinRun || !schedulesByHabit[habit.id]!.isDueOn(day)) continue;
+      due += 1;
+      final log = logsByHabit[habit.id]?[day];
+      final completed = isLogComplete(
         type: habit.type,
         targetValue: habit.targetValue,
         hasLog: log != null,
         loggedValue: log?.value,
       );
+      if (completed) done += 1;
     }
-
-    final StreakResult streak;
-    if (schedule.type.isCountBased) {
-      final ranges = schedule.type == HabitFrequencyType.timesPerWeek
-          ? weeklyPeriodRanges(startDate, today)
-          : monthlyPeriodRanges(startDate, today);
-      streak = periodBasedStreak(
-        periodRanges: ranges,
-        countInRange: (start, endExclusive) => logs
-            .where((l) => !l.logDate.isBefore(start) && l.logDate.isBefore(endExclusive))
-            .length,
-        targetCount: schedule.targetCount,
-      );
-    } else {
-      // A due-but-not-yet-logged "today" shouldn't zero out an otherwise
-      // intact streak before the day is even over — only let today count
-      // against the streak once it actually has a log (see
-      // dayBasedStreak's doc comment on this exact grace period).
-      final asOf = (isDueToday && todayLog == null)
-          ? today.subtract(const Duration(days: 1))
-          : today;
-      streak = dayBasedStreak(
-        startDate: startDate,
-        asOf: asOf,
-        isDue: schedule.isDueOn,
-        isCompleted: completedOn,
-      );
-    }
-
-    result.add(
-      HabitProgress(
-        habit: habit,
-        category: habit.categoryId != null ? categoriesById[habit.categoryId] : null,
-        isDueToday: isDueToday,
-        todayLog: todayLog,
-        isCompletedToday: completedOn(today),
-        currentStreak: streak.current,
-        longestStreak: streak.longest,
-      ),
-    );
+    points.add((day: day, done: done, total: due));
   }
-  return result;
-});
-
-/// Habit Tracker RS §4.3 "overall daily completion score" — N of M
-/// due-today habits already completed.
-final dailyHabitScoreProvider = FutureProvider.autoDispose<DailyHabitScore>((
-  ref,
-) async {
-  final progress = await ref.watch(habitProgressListProvider.future);
-  final due = progress.where((p) => p.isDueToday).toList();
-  final done = due.where((p) => p.isCompletedToday).length;
-  return (done: done, total: due.length);
+  return points;
 });
 
 /// Habit Tracker RS §4.3 — a single habit's detail-screen stats: streaks,
