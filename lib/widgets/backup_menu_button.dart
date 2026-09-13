@@ -94,7 +94,7 @@ class BackupMenuButton extends ConsumerWidget {
       SnackBar(
         content: Text(
           'Restored ${summary.categories} categories, ${summary.budgets} '
-          'budgets, ${summary.expenses} expenses.',
+          'budgets, ${summary.expenses} expenses, ${summary.habits} habits.',
         ),
       ),
     );

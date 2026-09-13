@@ -1765,6 +1765,1640 @@ class AlertsCompanion extends UpdateCompanion<Alert> {
   }
 }
 
+class $HabitCategoriesTable extends HabitCategories
+    with TableInfo<$HabitCategoriesTable, HabitCategory> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $HabitCategoriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 100,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _colorValueMeta = const VerificationMeta(
+    'colorValue',
+  );
+  @override
+  late final GeneratedColumn<int> colorValue = GeneratedColumn<int>(
+    'color_value',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0xFF6750A4),
+  );
+  static const VerificationMeta _isActiveMeta = const VerificationMeta(
+    'isActive',
+  );
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+    'is_active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    colorValue,
+    isActive,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'habit_categories';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<HabitCategory> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('color_value')) {
+      context.handle(
+        _colorValueMeta,
+        colorValue.isAcceptableOrUnknown(data['color_value']!, _colorValueMeta),
+      );
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(
+        _isActiveMeta,
+        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  HabitCategory map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return HabitCategory(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      colorValue: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}color_value'],
+      )!,
+      isActive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_active'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $HabitCategoriesTable createAlias(String alias) {
+    return $HabitCategoriesTable(attachedDatabase, alias);
+  }
+}
+
+class HabitCategory extends DataClass implements Insertable<HabitCategory> {
+  final int id;
+  final String name;
+  final int colorValue;
+  final bool isActive;
+  final DateTime createdAt;
+  const HabitCategory({
+    required this.id,
+    required this.name,
+    required this.colorValue,
+    required this.isActive,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    map['color_value'] = Variable<int>(colorValue);
+    map['is_active'] = Variable<bool>(isActive);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  HabitCategoriesCompanion toCompanion(bool nullToAbsent) {
+    return HabitCategoriesCompanion(
+      id: Value(id),
+      name: Value(name),
+      colorValue: Value(colorValue),
+      isActive: Value(isActive),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory HabitCategory.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return HabitCategory(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      colorValue: serializer.fromJson<int>(json['colorValue']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'colorValue': serializer.toJson<int>(colorValue),
+      'isActive': serializer.toJson<bool>(isActive),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  HabitCategory copyWith({
+    int? id,
+    String? name,
+    int? colorValue,
+    bool? isActive,
+    DateTime? createdAt,
+  }) => HabitCategory(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    colorValue: colorValue ?? this.colorValue,
+    isActive: isActive ?? this.isActive,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  HabitCategory copyWithCompanion(HabitCategoriesCompanion data) {
+    return HabitCategory(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      colorValue: data.colorValue.present
+          ? data.colorValue.value
+          : this.colorValue,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HabitCategory(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('colorValue: $colorValue, ')
+          ..write('isActive: $isActive, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, colorValue, isActive, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is HabitCategory &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.colorValue == this.colorValue &&
+          other.isActive == this.isActive &&
+          other.createdAt == this.createdAt);
+}
+
+class HabitCategoriesCompanion extends UpdateCompanion<HabitCategory> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<int> colorValue;
+  final Value<bool> isActive;
+  final Value<DateTime> createdAt;
+  const HabitCategoriesCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.colorValue = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  HabitCategoriesCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    this.colorValue = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : name = Value(name);
+  static Insertable<HabitCategory> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<int>? colorValue,
+    Expression<bool>? isActive,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (colorValue != null) 'color_value': colorValue,
+      if (isActive != null) 'is_active': isActive,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  HabitCategoriesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<int>? colorValue,
+    Value<bool>? isActive,
+    Value<DateTime>? createdAt,
+  }) {
+    return HabitCategoriesCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      colorValue: colorValue ?? this.colorValue,
+      isActive: isActive ?? this.isActive,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (colorValue.present) {
+      map['color_value'] = Variable<int>(colorValue.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HabitCategoriesCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('colorValue: $colorValue, ')
+          ..write('isActive: $isActive, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $HabitsTable extends Habits with TableInfo<$HabitsTable, Habit> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $HabitsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 100,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _iconMeta = const VerificationMeta('icon');
+  @override
+  late final GeneratedColumn<String> icon = GeneratedColumn<String>(
+    'icon',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _colorValueMeta = const VerificationMeta(
+    'colorValue',
+  );
+  @override
+  late final GeneratedColumn<int> colorValue = GeneratedColumn<int>(
+    'color_value',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0xFF6750A4),
+  );
+  static const VerificationMeta _categoryIdMeta = const VerificationMeta(
+    'categoryId',
+  );
+  @override
+  late final GeneratedColumn<int> categoryId = GeneratedColumn<int>(
+    'category_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES habit_categories (id)',
+    ),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<HabitType, String> type =
+      GeneratedColumn<String>(
+        'type',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<HabitType>($HabitsTable.$convertertype);
+  @override
+  late final GeneratedColumnWithTypeConverter<HabitFrequencyType, String>
+  frequencyType = GeneratedColumn<String>(
+    'frequency_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  ).withConverter<HabitFrequencyType>($HabitsTable.$converterfrequencyType);
+  static const VerificationMeta _frequencyConfigMeta = const VerificationMeta(
+    'frequencyConfig',
+  );
+  @override
+  late final GeneratedColumn<String> frequencyConfig = GeneratedColumn<String>(
+    'frequency_config',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('{}'),
+  );
+  static const VerificationMeta _targetValueMeta = const VerificationMeta(
+    'targetValue',
+  );
+  @override
+  late final GeneratedColumn<double> targetValue = GeneratedColumn<double>(
+    'target_value',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _unitMeta = const VerificationMeta('unit');
+  @override
+  late final GeneratedColumn<String> unit = GeneratedColumn<String>(
+    'unit',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _startDateMeta = const VerificationMeta(
+    'startDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startDate = GeneratedColumn<DateTime>(
+    'start_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endDateMeta = const VerificationMeta(
+    'endDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> endDate = GeneratedColumn<DateTime>(
+    'end_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isActiveMeta = const VerificationMeta(
+    'isActive',
+  );
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+    'is_active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    icon,
+    colorValue,
+    categoryId,
+    type,
+    frequencyType,
+    frequencyConfig,
+    targetValue,
+    unit,
+    startDate,
+    endDate,
+    isActive,
+    sortOrder,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'habits';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Habit> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('icon')) {
+      context.handle(
+        _iconMeta,
+        icon.isAcceptableOrUnknown(data['icon']!, _iconMeta),
+      );
+    }
+    if (data.containsKey('color_value')) {
+      context.handle(
+        _colorValueMeta,
+        colorValue.isAcceptableOrUnknown(data['color_value']!, _colorValueMeta),
+      );
+    }
+    if (data.containsKey('category_id')) {
+      context.handle(
+        _categoryIdMeta,
+        categoryId.isAcceptableOrUnknown(data['category_id']!, _categoryIdMeta),
+      );
+    }
+    if (data.containsKey('frequency_config')) {
+      context.handle(
+        _frequencyConfigMeta,
+        frequencyConfig.isAcceptableOrUnknown(
+          data['frequency_config']!,
+          _frequencyConfigMeta,
+        ),
+      );
+    }
+    if (data.containsKey('target_value')) {
+      context.handle(
+        _targetValueMeta,
+        targetValue.isAcceptableOrUnknown(
+          data['target_value']!,
+          _targetValueMeta,
+        ),
+      );
+    }
+    if (data.containsKey('unit')) {
+      context.handle(
+        _unitMeta,
+        unit.isAcceptableOrUnknown(data['unit']!, _unitMeta),
+      );
+    }
+    if (data.containsKey('start_date')) {
+      context.handle(
+        _startDateMeta,
+        startDate.isAcceptableOrUnknown(data['start_date']!, _startDateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startDateMeta);
+    }
+    if (data.containsKey('end_date')) {
+      context.handle(
+        _endDateMeta,
+        endDate.isAcceptableOrUnknown(data['end_date']!, _endDateMeta),
+      );
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(
+        _isActiveMeta,
+        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
+      );
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Habit map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Habit(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      icon: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}icon'],
+      ),
+      colorValue: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}color_value'],
+      )!,
+      categoryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}category_id'],
+      ),
+      type: $HabitsTable.$convertertype.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}type'],
+        )!,
+      ),
+      frequencyType: $HabitsTable.$converterfrequencyType.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}frequency_type'],
+        )!,
+      ),
+      frequencyConfig: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}frequency_config'],
+      )!,
+      targetValue: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}target_value'],
+      ),
+      unit: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}unit'],
+      ),
+      startDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}start_date'],
+      )!,
+      endDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}end_date'],
+      ),
+      isActive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_active'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $HabitsTable createAlias(String alias) {
+    return $HabitsTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<HabitType, String, String> $convertertype =
+      const EnumNameConverter<HabitType>(HabitType.values);
+  static JsonTypeConverter2<HabitFrequencyType, String, String>
+  $converterfrequencyType = const EnumNameConverter<HabitFrequencyType>(
+    HabitFrequencyType.values,
+  );
+}
+
+class Habit extends DataClass implements Insertable<Habit> {
+  final int id;
+  final String name;
+
+  /// A single emoji/short glyph shown as the habit's icon, or null.
+  final String? icon;
+  final int colorValue;
+  final int? categoryId;
+  final HabitType type;
+  final HabitFrequencyType frequencyType;
+
+  /// JSON-encoded config whose shape depends on [frequencyType] — see
+  /// FrequencySchedule (lib/logic/frequency_schedule.dart) for the shapes
+  /// and how each is interpreted. Kept as JSON rather than rigid columns so
+  /// new frequency patterns can be added later without a schema change
+  /// (Habit Tracker RS §5 "dynamicity").
+  final String frequencyConfig;
+
+  /// Quantifiable habits' daily target (e.g. 8 glasses, 30 minutes). Null
+  /// for binary habits, or a quantifiable habit tracked without a fixed goal.
+  final double? targetValue;
+  final String? unit;
+  final DateTime startDate;
+  final DateTime? endDate;
+
+  /// Archive instead of delete, so historical logs stay intact — same
+  /// pattern as Categories.isActive.
+  final bool isActive;
+
+  /// User-controlled ordering/pinning on the Today view (Habit Tracker RS
+  /// §4.1).
+  final int sortOrder;
+  final DateTime createdAt;
+  const Habit({
+    required this.id,
+    required this.name,
+    this.icon,
+    required this.colorValue,
+    this.categoryId,
+    required this.type,
+    required this.frequencyType,
+    required this.frequencyConfig,
+    this.targetValue,
+    this.unit,
+    required this.startDate,
+    this.endDate,
+    required this.isActive,
+    required this.sortOrder,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || icon != null) {
+      map['icon'] = Variable<String>(icon);
+    }
+    map['color_value'] = Variable<int>(colorValue);
+    if (!nullToAbsent || categoryId != null) {
+      map['category_id'] = Variable<int>(categoryId);
+    }
+    {
+      map['type'] = Variable<String>($HabitsTable.$convertertype.toSql(type));
+    }
+    {
+      map['frequency_type'] = Variable<String>(
+        $HabitsTable.$converterfrequencyType.toSql(frequencyType),
+      );
+    }
+    map['frequency_config'] = Variable<String>(frequencyConfig);
+    if (!nullToAbsent || targetValue != null) {
+      map['target_value'] = Variable<double>(targetValue);
+    }
+    if (!nullToAbsent || unit != null) {
+      map['unit'] = Variable<String>(unit);
+    }
+    map['start_date'] = Variable<DateTime>(startDate);
+    if (!nullToAbsent || endDate != null) {
+      map['end_date'] = Variable<DateTime>(endDate);
+    }
+    map['is_active'] = Variable<bool>(isActive);
+    map['sort_order'] = Variable<int>(sortOrder);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  HabitsCompanion toCompanion(bool nullToAbsent) {
+    return HabitsCompanion(
+      id: Value(id),
+      name: Value(name),
+      icon: icon == null && nullToAbsent ? const Value.absent() : Value(icon),
+      colorValue: Value(colorValue),
+      categoryId: categoryId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(categoryId),
+      type: Value(type),
+      frequencyType: Value(frequencyType),
+      frequencyConfig: Value(frequencyConfig),
+      targetValue: targetValue == null && nullToAbsent
+          ? const Value.absent()
+          : Value(targetValue),
+      unit: unit == null && nullToAbsent ? const Value.absent() : Value(unit),
+      startDate: Value(startDate),
+      endDate: endDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endDate),
+      isActive: Value(isActive),
+      sortOrder: Value(sortOrder),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory Habit.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Habit(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      icon: serializer.fromJson<String?>(json['icon']),
+      colorValue: serializer.fromJson<int>(json['colorValue']),
+      categoryId: serializer.fromJson<int?>(json['categoryId']),
+      type: $HabitsTable.$convertertype.fromJson(
+        serializer.fromJson<String>(json['type']),
+      ),
+      frequencyType: $HabitsTable.$converterfrequencyType.fromJson(
+        serializer.fromJson<String>(json['frequencyType']),
+      ),
+      frequencyConfig: serializer.fromJson<String>(json['frequencyConfig']),
+      targetValue: serializer.fromJson<double?>(json['targetValue']),
+      unit: serializer.fromJson<String?>(json['unit']),
+      startDate: serializer.fromJson<DateTime>(json['startDate']),
+      endDate: serializer.fromJson<DateTime?>(json['endDate']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'icon': serializer.toJson<String?>(icon),
+      'colorValue': serializer.toJson<int>(colorValue),
+      'categoryId': serializer.toJson<int?>(categoryId),
+      'type': serializer.toJson<String>(
+        $HabitsTable.$convertertype.toJson(type),
+      ),
+      'frequencyType': serializer.toJson<String>(
+        $HabitsTable.$converterfrequencyType.toJson(frequencyType),
+      ),
+      'frequencyConfig': serializer.toJson<String>(frequencyConfig),
+      'targetValue': serializer.toJson<double?>(targetValue),
+      'unit': serializer.toJson<String?>(unit),
+      'startDate': serializer.toJson<DateTime>(startDate),
+      'endDate': serializer.toJson<DateTime?>(endDate),
+      'isActive': serializer.toJson<bool>(isActive),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  Habit copyWith({
+    int? id,
+    String? name,
+    Value<String?> icon = const Value.absent(),
+    int? colorValue,
+    Value<int?> categoryId = const Value.absent(),
+    HabitType? type,
+    HabitFrequencyType? frequencyType,
+    String? frequencyConfig,
+    Value<double?> targetValue = const Value.absent(),
+    Value<String?> unit = const Value.absent(),
+    DateTime? startDate,
+    Value<DateTime?> endDate = const Value.absent(),
+    bool? isActive,
+    int? sortOrder,
+    DateTime? createdAt,
+  }) => Habit(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    icon: icon.present ? icon.value : this.icon,
+    colorValue: colorValue ?? this.colorValue,
+    categoryId: categoryId.present ? categoryId.value : this.categoryId,
+    type: type ?? this.type,
+    frequencyType: frequencyType ?? this.frequencyType,
+    frequencyConfig: frequencyConfig ?? this.frequencyConfig,
+    targetValue: targetValue.present ? targetValue.value : this.targetValue,
+    unit: unit.present ? unit.value : this.unit,
+    startDate: startDate ?? this.startDate,
+    endDate: endDate.present ? endDate.value : this.endDate,
+    isActive: isActive ?? this.isActive,
+    sortOrder: sortOrder ?? this.sortOrder,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  Habit copyWithCompanion(HabitsCompanion data) {
+    return Habit(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      icon: data.icon.present ? data.icon.value : this.icon,
+      colorValue: data.colorValue.present
+          ? data.colorValue.value
+          : this.colorValue,
+      categoryId: data.categoryId.present
+          ? data.categoryId.value
+          : this.categoryId,
+      type: data.type.present ? data.type.value : this.type,
+      frequencyType: data.frequencyType.present
+          ? data.frequencyType.value
+          : this.frequencyType,
+      frequencyConfig: data.frequencyConfig.present
+          ? data.frequencyConfig.value
+          : this.frequencyConfig,
+      targetValue: data.targetValue.present
+          ? data.targetValue.value
+          : this.targetValue,
+      unit: data.unit.present ? data.unit.value : this.unit,
+      startDate: data.startDate.present ? data.startDate.value : this.startDate,
+      endDate: data.endDate.present ? data.endDate.value : this.endDate,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Habit(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('icon: $icon, ')
+          ..write('colorValue: $colorValue, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('type: $type, ')
+          ..write('frequencyType: $frequencyType, ')
+          ..write('frequencyConfig: $frequencyConfig, ')
+          ..write('targetValue: $targetValue, ')
+          ..write('unit: $unit, ')
+          ..write('startDate: $startDate, ')
+          ..write('endDate: $endDate, ')
+          ..write('isActive: $isActive, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    icon,
+    colorValue,
+    categoryId,
+    type,
+    frequencyType,
+    frequencyConfig,
+    targetValue,
+    unit,
+    startDate,
+    endDate,
+    isActive,
+    sortOrder,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Habit &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.icon == this.icon &&
+          other.colorValue == this.colorValue &&
+          other.categoryId == this.categoryId &&
+          other.type == this.type &&
+          other.frequencyType == this.frequencyType &&
+          other.frequencyConfig == this.frequencyConfig &&
+          other.targetValue == this.targetValue &&
+          other.unit == this.unit &&
+          other.startDate == this.startDate &&
+          other.endDate == this.endDate &&
+          other.isActive == this.isActive &&
+          other.sortOrder == this.sortOrder &&
+          other.createdAt == this.createdAt);
+}
+
+class HabitsCompanion extends UpdateCompanion<Habit> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<String?> icon;
+  final Value<int> colorValue;
+  final Value<int?> categoryId;
+  final Value<HabitType> type;
+  final Value<HabitFrequencyType> frequencyType;
+  final Value<String> frequencyConfig;
+  final Value<double?> targetValue;
+  final Value<String?> unit;
+  final Value<DateTime> startDate;
+  final Value<DateTime?> endDate;
+  final Value<bool> isActive;
+  final Value<int> sortOrder;
+  final Value<DateTime> createdAt;
+  const HabitsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.icon = const Value.absent(),
+    this.colorValue = const Value.absent(),
+    this.categoryId = const Value.absent(),
+    this.type = const Value.absent(),
+    this.frequencyType = const Value.absent(),
+    this.frequencyConfig = const Value.absent(),
+    this.targetValue = const Value.absent(),
+    this.unit = const Value.absent(),
+    this.startDate = const Value.absent(),
+    this.endDate = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  HabitsCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    this.icon = const Value.absent(),
+    this.colorValue = const Value.absent(),
+    this.categoryId = const Value.absent(),
+    required HabitType type,
+    required HabitFrequencyType frequencyType,
+    this.frequencyConfig = const Value.absent(),
+    this.targetValue = const Value.absent(),
+    this.unit = const Value.absent(),
+    required DateTime startDate,
+    this.endDate = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : name = Value(name),
+       type = Value(type),
+       frequencyType = Value(frequencyType),
+       startDate = Value(startDate);
+  static Insertable<Habit> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<String>? icon,
+    Expression<int>? colorValue,
+    Expression<int>? categoryId,
+    Expression<String>? type,
+    Expression<String>? frequencyType,
+    Expression<String>? frequencyConfig,
+    Expression<double>? targetValue,
+    Expression<String>? unit,
+    Expression<DateTime>? startDate,
+    Expression<DateTime>? endDate,
+    Expression<bool>? isActive,
+    Expression<int>? sortOrder,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (icon != null) 'icon': icon,
+      if (colorValue != null) 'color_value': colorValue,
+      if (categoryId != null) 'category_id': categoryId,
+      if (type != null) 'type': type,
+      if (frequencyType != null) 'frequency_type': frequencyType,
+      if (frequencyConfig != null) 'frequency_config': frequencyConfig,
+      if (targetValue != null) 'target_value': targetValue,
+      if (unit != null) 'unit': unit,
+      if (startDate != null) 'start_date': startDate,
+      if (endDate != null) 'end_date': endDate,
+      if (isActive != null) 'is_active': isActive,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  HabitsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<String?>? icon,
+    Value<int>? colorValue,
+    Value<int?>? categoryId,
+    Value<HabitType>? type,
+    Value<HabitFrequencyType>? frequencyType,
+    Value<String>? frequencyConfig,
+    Value<double?>? targetValue,
+    Value<String?>? unit,
+    Value<DateTime>? startDate,
+    Value<DateTime?>? endDate,
+    Value<bool>? isActive,
+    Value<int>? sortOrder,
+    Value<DateTime>? createdAt,
+  }) {
+    return HabitsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      icon: icon ?? this.icon,
+      colorValue: colorValue ?? this.colorValue,
+      categoryId: categoryId ?? this.categoryId,
+      type: type ?? this.type,
+      frequencyType: frequencyType ?? this.frequencyType,
+      frequencyConfig: frequencyConfig ?? this.frequencyConfig,
+      targetValue: targetValue ?? this.targetValue,
+      unit: unit ?? this.unit,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
+      isActive: isActive ?? this.isActive,
+      sortOrder: sortOrder ?? this.sortOrder,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (icon.present) {
+      map['icon'] = Variable<String>(icon.value);
+    }
+    if (colorValue.present) {
+      map['color_value'] = Variable<int>(colorValue.value);
+    }
+    if (categoryId.present) {
+      map['category_id'] = Variable<int>(categoryId.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(
+        $HabitsTable.$convertertype.toSql(type.value),
+      );
+    }
+    if (frequencyType.present) {
+      map['frequency_type'] = Variable<String>(
+        $HabitsTable.$converterfrequencyType.toSql(frequencyType.value),
+      );
+    }
+    if (frequencyConfig.present) {
+      map['frequency_config'] = Variable<String>(frequencyConfig.value);
+    }
+    if (targetValue.present) {
+      map['target_value'] = Variable<double>(targetValue.value);
+    }
+    if (unit.present) {
+      map['unit'] = Variable<String>(unit.value);
+    }
+    if (startDate.present) {
+      map['start_date'] = Variable<DateTime>(startDate.value);
+    }
+    if (endDate.present) {
+      map['end_date'] = Variable<DateTime>(endDate.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HabitsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('icon: $icon, ')
+          ..write('colorValue: $colorValue, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('type: $type, ')
+          ..write('frequencyType: $frequencyType, ')
+          ..write('frequencyConfig: $frequencyConfig, ')
+          ..write('targetValue: $targetValue, ')
+          ..write('unit: $unit, ')
+          ..write('startDate: $startDate, ')
+          ..write('endDate: $endDate, ')
+          ..write('isActive: $isActive, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $HabitLogsTable extends HabitLogs
+    with TableInfo<$HabitLogsTable, HabitLog> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $HabitLogsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _habitIdMeta = const VerificationMeta(
+    'habitId',
+  );
+  @override
+  late final GeneratedColumn<int> habitId = GeneratedColumn<int>(
+    'habit_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES habits (id)',
+    ),
+  );
+  static const VerificationMeta _logDateMeta = const VerificationMeta(
+    'logDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> logDate = GeneratedColumn<DateTime>(
+    'log_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _valueMeta = const VerificationMeta('value');
+  @override
+  late final GeneratedColumn<double> value = GeneratedColumn<double>(
+    'value',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    habitId,
+    logDate,
+    value,
+    note,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'habit_logs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<HabitLog> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('habit_id')) {
+      context.handle(
+        _habitIdMeta,
+        habitId.isAcceptableOrUnknown(data['habit_id']!, _habitIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_habitIdMeta);
+    }
+    if (data.containsKey('log_date')) {
+      context.handle(
+        _logDateMeta,
+        logDate.isAcceptableOrUnknown(data['log_date']!, _logDateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_logDateMeta);
+    }
+    if (data.containsKey('value')) {
+      context.handle(
+        _valueMeta,
+        value.isAcceptableOrUnknown(data['value']!, _valueMeta),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {habitId, logDate},
+  ];
+  @override
+  HabitLog map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return HabitLog(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      habitId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}habit_id'],
+      )!,
+      logDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}log_date'],
+      )!,
+      value: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}value'],
+      ),
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $HabitLogsTable createAlias(String alias) {
+    return $HabitLogsTable(attachedDatabase, alias);
+  }
+}
+
+class HabitLog extends DataClass implements Insertable<HabitLog> {
+  final int id;
+  final int habitId;
+
+  /// Calendar day this log is for, normalized to midnight — a habit has at
+  /// most one log per day (see [uniqueKeys]); logging again for the same
+  /// day replaces it rather than adding a second entry.
+  final DateTime logDate;
+
+  /// Null for binary habits (the row's mere presence means "done"). For
+  /// quantifiable habits, the measured amount logged for that day.
+  final double? value;
+  final String? note;
+  final DateTime createdAt;
+  const HabitLog({
+    required this.id,
+    required this.habitId,
+    required this.logDate,
+    this.value,
+    this.note,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['habit_id'] = Variable<int>(habitId);
+    map['log_date'] = Variable<DateTime>(logDate);
+    if (!nullToAbsent || value != null) {
+      map['value'] = Variable<double>(value);
+    }
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  HabitLogsCompanion toCompanion(bool nullToAbsent) {
+    return HabitLogsCompanion(
+      id: Value(id),
+      habitId: Value(habitId),
+      logDate: Value(logDate),
+      value: value == null && nullToAbsent
+          ? const Value.absent()
+          : Value(value),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory HabitLog.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return HabitLog(
+      id: serializer.fromJson<int>(json['id']),
+      habitId: serializer.fromJson<int>(json['habitId']),
+      logDate: serializer.fromJson<DateTime>(json['logDate']),
+      value: serializer.fromJson<double?>(json['value']),
+      note: serializer.fromJson<String?>(json['note']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'habitId': serializer.toJson<int>(habitId),
+      'logDate': serializer.toJson<DateTime>(logDate),
+      'value': serializer.toJson<double?>(value),
+      'note': serializer.toJson<String?>(note),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  HabitLog copyWith({
+    int? id,
+    int? habitId,
+    DateTime? logDate,
+    Value<double?> value = const Value.absent(),
+    Value<String?> note = const Value.absent(),
+    DateTime? createdAt,
+  }) => HabitLog(
+    id: id ?? this.id,
+    habitId: habitId ?? this.habitId,
+    logDate: logDate ?? this.logDate,
+    value: value.present ? value.value : this.value,
+    note: note.present ? note.value : this.note,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  HabitLog copyWithCompanion(HabitLogsCompanion data) {
+    return HabitLog(
+      id: data.id.present ? data.id.value : this.id,
+      habitId: data.habitId.present ? data.habitId.value : this.habitId,
+      logDate: data.logDate.present ? data.logDate.value : this.logDate,
+      value: data.value.present ? data.value.value : this.value,
+      note: data.note.present ? data.note.value : this.note,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HabitLog(')
+          ..write('id: $id, ')
+          ..write('habitId: $habitId, ')
+          ..write('logDate: $logDate, ')
+          ..write('value: $value, ')
+          ..write('note: $note, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, habitId, logDate, value, note, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is HabitLog &&
+          other.id == this.id &&
+          other.habitId == this.habitId &&
+          other.logDate == this.logDate &&
+          other.value == this.value &&
+          other.note == this.note &&
+          other.createdAt == this.createdAt);
+}
+
+class HabitLogsCompanion extends UpdateCompanion<HabitLog> {
+  final Value<int> id;
+  final Value<int> habitId;
+  final Value<DateTime> logDate;
+  final Value<double?> value;
+  final Value<String?> note;
+  final Value<DateTime> createdAt;
+  const HabitLogsCompanion({
+    this.id = const Value.absent(),
+    this.habitId = const Value.absent(),
+    this.logDate = const Value.absent(),
+    this.value = const Value.absent(),
+    this.note = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  HabitLogsCompanion.insert({
+    this.id = const Value.absent(),
+    required int habitId,
+    required DateTime logDate,
+    this.value = const Value.absent(),
+    this.note = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : habitId = Value(habitId),
+       logDate = Value(logDate);
+  static Insertable<HabitLog> custom({
+    Expression<int>? id,
+    Expression<int>? habitId,
+    Expression<DateTime>? logDate,
+    Expression<double>? value,
+    Expression<String>? note,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (habitId != null) 'habit_id': habitId,
+      if (logDate != null) 'log_date': logDate,
+      if (value != null) 'value': value,
+      if (note != null) 'note': note,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  HabitLogsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? habitId,
+    Value<DateTime>? logDate,
+    Value<double?>? value,
+    Value<String?>? note,
+    Value<DateTime>? createdAt,
+  }) {
+    return HabitLogsCompanion(
+      id: id ?? this.id,
+      habitId: habitId ?? this.habitId,
+      logDate: logDate ?? this.logDate,
+      value: value ?? this.value,
+      note: note ?? this.note,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (habitId.present) {
+      map['habit_id'] = Variable<int>(habitId.value);
+    }
+    if (logDate.present) {
+      map['log_date'] = Variable<DateTime>(logDate.value);
+    }
+    if (value.present) {
+      map['value'] = Variable<double>(value.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HabitLogsCompanion(')
+          ..write('id: $id, ')
+          ..write('habitId: $habitId, ')
+          ..write('logDate: $logDate, ')
+          ..write('value: $value, ')
+          ..write('note: $note, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1772,6 +3406,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $BudgetsTable budgets = $BudgetsTable(this);
   late final $ExpensesTable expenses = $ExpensesTable(this);
   late final $AlertsTable alerts = $AlertsTable(this);
+  late final $HabitCategoriesTable habitCategories = $HabitCategoriesTable(
+    this,
+  );
+  late final $HabitsTable habits = $HabitsTable(this);
+  late final $HabitLogsTable habitLogs = $HabitLogsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1781,6 +3420,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     budgets,
     expenses,
     alerts,
+    habitCategories,
+    habits,
+    habitLogs,
   ];
 }
 
@@ -3430,6 +5072,1226 @@ typedef $$AlertsTableProcessedTableManager =
       Alert,
       PrefetchHooks Function({bool categoryId})
     >;
+typedef $$HabitCategoriesTableCreateCompanionBuilder =
+    HabitCategoriesCompanion Function({
+      Value<int> id,
+      required String name,
+      Value<int> colorValue,
+      Value<bool> isActive,
+      Value<DateTime> createdAt,
+    });
+typedef $$HabitCategoriesTableUpdateCompanionBuilder =
+    HabitCategoriesCompanion Function({
+      Value<int> id,
+      Value<String> name,
+      Value<int> colorValue,
+      Value<bool> isActive,
+      Value<DateTime> createdAt,
+    });
+
+final class $$HabitCategoriesTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $HabitCategoriesTable, HabitCategory> {
+  $$HabitCategoriesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static MultiTypedResultKey<$HabitsTable, List<Habit>> _habitsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.habits,
+    aliasName: 'habit_categories__id__habits__category_id',
+  );
+
+  $$HabitsTableProcessedTableManager get habitsRefs {
+    final manager = $$HabitsTableTableManager(
+      $_db,
+      $_db.habits,
+    ).filter((f) => f.categoryId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_habitsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$HabitCategoriesTableFilterComposer
+    extends Composer<_$AppDatabase, $HabitCategoriesTable> {
+  $$HabitCategoriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get colorValue => $composableBuilder(
+    column: $table.colorValue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> habitsRefs(
+    Expression<bool> Function($$HabitsTableFilterComposer f) f,
+  ) {
+    final $$HabitsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.habits,
+      getReferencedColumn: (t) => t.categoryId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$HabitsTableFilterComposer(
+            $db: $db,
+            $table: $db.habits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$HabitCategoriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $HabitCategoriesTable> {
+  $$HabitCategoriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get colorValue => $composableBuilder(
+    column: $table.colorValue,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$HabitCategoriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $HabitCategoriesTable> {
+  $$HabitCategoriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<int> get colorValue => $composableBuilder(
+    column: $table.colorValue,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  Expression<T> habitsRefs<T extends Object>(
+    Expression<T> Function($$HabitsTableAnnotationComposer a) f,
+  ) {
+    final $$HabitsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.habits,
+      getReferencedColumn: (t) => t.categoryId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$HabitsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.habits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$HabitCategoriesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $HabitCategoriesTable,
+          HabitCategory,
+          $$HabitCategoriesTableFilterComposer,
+          $$HabitCategoriesTableOrderingComposer,
+          $$HabitCategoriesTableAnnotationComposer,
+          $$HabitCategoriesTableCreateCompanionBuilder,
+          $$HabitCategoriesTableUpdateCompanionBuilder,
+          (HabitCategory, $$HabitCategoriesTableReferences),
+          HabitCategory,
+          PrefetchHooks Function({bool habitsRefs})
+        > {
+  $$HabitCategoriesTableTableManager(
+    _$AppDatabase db,
+    $HabitCategoriesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$HabitCategoriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$HabitCategoriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$HabitCategoriesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<int> colorValue = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => HabitCategoriesCompanion(
+                id: id,
+                name: name,
+                colorValue: colorValue,
+                isActive: isActive,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                Value<int> colorValue = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => HabitCategoriesCompanion.insert(
+                id: id,
+                name: name,
+                colorValue: colorValue,
+                isActive: isActive,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$HabitCategoriesTable, HabitCategory>(table),
+                  $$HabitCategoriesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({habitsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (habitsRefs) db.habits],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (habitsRefs)
+                    await $_getPrefetchedData<
+                      HabitCategory,
+                      $HabitCategoriesTable,
+                      Habit
+                    >(
+                      currentTable: table,
+                      referencedTable: $$HabitCategoriesTableReferences
+                          ._habitsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$HabitCategoriesTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).habitsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.categoryId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$HabitCategoriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $HabitCategoriesTable,
+      HabitCategory,
+      $$HabitCategoriesTableFilterComposer,
+      $$HabitCategoriesTableOrderingComposer,
+      $$HabitCategoriesTableAnnotationComposer,
+      $$HabitCategoriesTableCreateCompanionBuilder,
+      $$HabitCategoriesTableUpdateCompanionBuilder,
+      (HabitCategory, $$HabitCategoriesTableReferences),
+      HabitCategory,
+      PrefetchHooks Function({bool habitsRefs})
+    >;
+typedef $$HabitsTableCreateCompanionBuilder = HabitsCompanion Function({
+  Value<int> id,
+  required String name,
+  Value<String?> icon,
+  Value<int> colorValue,
+  Value<int?> categoryId,
+  required HabitType type,
+  required HabitFrequencyType frequencyType,
+  Value<String> frequencyConfig,
+  Value<double?> targetValue,
+  Value<String?> unit,
+  required DateTime startDate,
+  Value<DateTime?> endDate,
+  Value<bool> isActive,
+  Value<int> sortOrder,
+  Value<DateTime> createdAt,
+});
+typedef $$HabitsTableUpdateCompanionBuilder = HabitsCompanion Function({
+  Value<int> id,
+  Value<String> name,
+  Value<String?> icon,
+  Value<int> colorValue,
+  Value<int?> categoryId,
+  Value<HabitType> type,
+  Value<HabitFrequencyType> frequencyType,
+  Value<String> frequencyConfig,
+  Value<double?> targetValue,
+  Value<String?> unit,
+  Value<DateTime> startDate,
+  Value<DateTime?> endDate,
+  Value<bool> isActive,
+  Value<int> sortOrder,
+  Value<DateTime> createdAt,
+});
+
+final class $$HabitsTableReferences
+    extends BaseReferences<_$AppDatabase, $HabitsTable, Habit> {
+  $$HabitsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $HabitCategoriesTable _categoryIdTable(_$AppDatabase db) => db
+      .habitCategories
+      .createAlias('habits__category_id__habit_categories__id');
+
+  $$HabitCategoriesTableProcessedTableManager? get categoryId {
+    final $_column = $_itemColumn<int>('category_id');
+    if ($_column == null) return null;
+    final manager = $$HabitCategoriesTableTableManager(
+      $_db,
+      $_db.habitCategories,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_categoryIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$HabitLogsTable, List<HabitLog>>
+  _habitLogsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.habitLogs,
+    aliasName: 'habits__id__habit_logs__habit_id',
+  );
+
+  $$HabitLogsTableProcessedTableManager get habitLogsRefs {
+    final manager = $$HabitLogsTableTableManager(
+      $_db,
+      $_db.habitLogs,
+    ).filter((f) => f.habitId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_habitLogsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$HabitsTableFilterComposer
+    extends Composer<_$AppDatabase, $HabitsTable> {
+  $$HabitsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get icon => $composableBuilder(
+    column: $table.icon,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get colorValue => $composableBuilder(
+    column: $table.colorValue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<HabitType, HabitType, String> get type =>
+      $composableBuilder(
+        column: $table.type,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnWithTypeConverterFilters<HabitFrequencyType, HabitFrequencyType, String>
+  get frequencyType => $composableBuilder(
+    column: $table.frequencyType,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<String> get frequencyConfig => $composableBuilder(
+    column: $table.frequencyConfig,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get targetValue => $composableBuilder(
+    column: $table.targetValue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get unit => $composableBuilder(
+    column: $table.unit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startDate => $composableBuilder(
+    column: $table.startDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get endDate => $composableBuilder(
+    column: $table.endDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$HabitCategoriesTableFilterComposer get categoryId {
+    final $$HabitCategoriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoryId,
+      referencedTable: $db.habitCategories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$HabitCategoriesTableFilterComposer(
+            $db: $db,
+            $table: $db.habitCategories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> habitLogsRefs(
+    Expression<bool> Function($$HabitLogsTableFilterComposer f) f,
+  ) {
+    final $$HabitLogsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.habitLogs,
+      getReferencedColumn: (t) => t.habitId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$HabitLogsTableFilterComposer(
+            $db: $db,
+            $table: $db.habitLogs,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$HabitsTableOrderingComposer
+    extends Composer<_$AppDatabase, $HabitsTable> {
+  $$HabitsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get icon => $composableBuilder(
+    column: $table.icon,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get colorValue => $composableBuilder(
+    column: $table.colorValue,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get frequencyType => $composableBuilder(
+    column: $table.frequencyType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get frequencyConfig => $composableBuilder(
+    column: $table.frequencyConfig,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get targetValue => $composableBuilder(
+    column: $table.targetValue,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get unit => $composableBuilder(
+    column: $table.unit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startDate => $composableBuilder(
+    column: $table.startDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get endDate => $composableBuilder(
+    column: $table.endDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$HabitCategoriesTableOrderingComposer get categoryId {
+    final $$HabitCategoriesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoryId,
+      referencedTable: $db.habitCategories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$HabitCategoriesTableOrderingComposer(
+            $db: $db,
+            $table: $db.habitCategories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$HabitsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $HabitsTable> {
+  $$HabitsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get icon =>
+      $composableBuilder(column: $table.icon, builder: (column) => column);
+
+  GeneratedColumn<int> get colorValue => $composableBuilder(
+    column: $table.colorValue,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<HabitType, String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<HabitFrequencyType, String>
+  get frequencyType => $composableBuilder(
+    column: $table.frequencyType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get frequencyConfig => $composableBuilder(
+    column: $table.frequencyConfig,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get targetValue => $composableBuilder(
+    column: $table.targetValue,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get unit =>
+      $composableBuilder(column: $table.unit, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get startDate =>
+      $composableBuilder(column: $table.startDate, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get endDate =>
+      $composableBuilder(column: $table.endDate, builder: (column) => column);
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$HabitCategoriesTableAnnotationComposer get categoryId {
+    final $$HabitCategoriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoryId,
+      referencedTable: $db.habitCategories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$HabitCategoriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.habitCategories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> habitLogsRefs<T extends Object>(
+    Expression<T> Function($$HabitLogsTableAnnotationComposer a) f,
+  ) {
+    final $$HabitLogsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.habitLogs,
+      getReferencedColumn: (t) => t.habitId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$HabitLogsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.habitLogs,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$HabitsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $HabitsTable,
+          Habit,
+          $$HabitsTableFilterComposer,
+          $$HabitsTableOrderingComposer,
+          $$HabitsTableAnnotationComposer,
+          $$HabitsTableCreateCompanionBuilder,
+          $$HabitsTableUpdateCompanionBuilder,
+          (Habit, $$HabitsTableReferences),
+          Habit,
+          PrefetchHooks Function({bool categoryId, bool habitLogsRefs})
+        > {
+  $$HabitsTableTableManager(_$AppDatabase db, $HabitsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$HabitsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$HabitsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$HabitsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> icon = const Value.absent(),
+                Value<int> colorValue = const Value.absent(),
+                Value<int?> categoryId = const Value.absent(),
+                Value<HabitType> type = const Value.absent(),
+                Value<HabitFrequencyType> frequencyType = const Value.absent(),
+                Value<String> frequencyConfig = const Value.absent(),
+                Value<double?> targetValue = const Value.absent(),
+                Value<String?> unit = const Value.absent(),
+                Value<DateTime> startDate = const Value.absent(),
+                Value<DateTime?> endDate = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => HabitsCompanion(
+                id: id,
+                name: name,
+                icon: icon,
+                colorValue: colorValue,
+                categoryId: categoryId,
+                type: type,
+                frequencyType: frequencyType,
+                frequencyConfig: frequencyConfig,
+                targetValue: targetValue,
+                unit: unit,
+                startDate: startDate,
+                endDate: endDate,
+                isActive: isActive,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                Value<String?> icon = const Value.absent(),
+                Value<int> colorValue = const Value.absent(),
+                Value<int?> categoryId = const Value.absent(),
+                required HabitType type,
+                required HabitFrequencyType frequencyType,
+                Value<String> frequencyConfig = const Value.absent(),
+                Value<double?> targetValue = const Value.absent(),
+                Value<String?> unit = const Value.absent(),
+                required DateTime startDate,
+                Value<DateTime?> endDate = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => HabitsCompanion.insert(
+                id: id,
+                name: name,
+                icon: icon,
+                colorValue: colorValue,
+                categoryId: categoryId,
+                type: type,
+                frequencyType: frequencyType,
+                frequencyConfig: frequencyConfig,
+                targetValue: targetValue,
+                unit: unit,
+                startDate: startDate,
+                endDate: endDate,
+                isActive: isActive,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$HabitsTable, Habit>(table),
+                  $$HabitsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({categoryId = false, habitLogsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (habitLogsRefs) db.habitLogs],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (categoryId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.categoryId,
+                        referencedTable: $$HabitsTableReferences
+                            ._categoryIdTable(db),
+                        referencedColumn: $$HabitsTableReferences
+                            ._categoryIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (habitLogsRefs)
+                    await $_getPrefetchedData<Habit, $HabitsTable, HabitLog>(
+                      currentTable: table,
+                      referencedTable: $$HabitsTableReferences
+                          ._habitLogsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$HabitsTableReferences(db, table, p0).habitLogsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.habitId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$HabitsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $HabitsTable,
+      Habit,
+      $$HabitsTableFilterComposer,
+      $$HabitsTableOrderingComposer,
+      $$HabitsTableAnnotationComposer,
+      $$HabitsTableCreateCompanionBuilder,
+      $$HabitsTableUpdateCompanionBuilder,
+      (Habit, $$HabitsTableReferences),
+      Habit,
+      PrefetchHooks Function({bool categoryId, bool habitLogsRefs})
+    >;
+typedef $$HabitLogsTableCreateCompanionBuilder = HabitLogsCompanion Function({
+  Value<int> id,
+  required int habitId,
+  required DateTime logDate,
+  Value<double?> value,
+  Value<String?> note,
+  Value<DateTime> createdAt,
+});
+typedef $$HabitLogsTableUpdateCompanionBuilder = HabitLogsCompanion Function({
+  Value<int> id,
+  Value<int> habitId,
+  Value<DateTime> logDate,
+  Value<double?> value,
+  Value<String?> note,
+  Value<DateTime> createdAt,
+});
+
+final class $$HabitLogsTableReferences
+    extends BaseReferences<_$AppDatabase, $HabitLogsTable, HabitLog> {
+  $$HabitLogsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $HabitsTable _habitIdTable(_$AppDatabase db) =>
+      db.habits.createAlias('habit_logs__habit_id__habits__id');
+
+  $$HabitsTableProcessedTableManager get habitId {
+    final $_column = $_itemColumn<int>('habit_id')!;
+
+    final manager = $$HabitsTableTableManager(
+      $_db,
+      $_db.habits,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_habitIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$HabitLogsTableFilterComposer
+    extends Composer<_$AppDatabase, $HabitLogsTable> {
+  $$HabitLogsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get logDate => $composableBuilder(
+    column: $table.logDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$HabitsTableFilterComposer get habitId {
+    final $$HabitsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.habitId,
+      referencedTable: $db.habits,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$HabitsTableFilterComposer(
+            $db: $db,
+            $table: $db.habits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$HabitLogsTableOrderingComposer
+    extends Composer<_$AppDatabase, $HabitLogsTable> {
+  $$HabitLogsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get logDate => $composableBuilder(
+    column: $table.logDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$HabitsTableOrderingComposer get habitId {
+    final $$HabitsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.habitId,
+      referencedTable: $db.habits,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$HabitsTableOrderingComposer(
+            $db: $db,
+            $table: $db.habits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$HabitLogsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $HabitLogsTable> {
+  $$HabitLogsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get logDate =>
+      $composableBuilder(column: $table.logDate, builder: (column) => column);
+
+  GeneratedColumn<double> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$HabitsTableAnnotationComposer get habitId {
+    final $$HabitsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.habitId,
+      referencedTable: $db.habits,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$HabitsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.habits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$HabitLogsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $HabitLogsTable,
+          HabitLog,
+          $$HabitLogsTableFilterComposer,
+          $$HabitLogsTableOrderingComposer,
+          $$HabitLogsTableAnnotationComposer,
+          $$HabitLogsTableCreateCompanionBuilder,
+          $$HabitLogsTableUpdateCompanionBuilder,
+          (HabitLog, $$HabitLogsTableReferences),
+          HabitLog,
+          PrefetchHooks Function({bool habitId})
+        > {
+  $$HabitLogsTableTableManager(_$AppDatabase db, $HabitLogsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$HabitLogsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$HabitLogsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$HabitLogsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> habitId = const Value.absent(),
+                Value<DateTime> logDate = const Value.absent(),
+                Value<double?> value = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => HabitLogsCompanion(
+                id: id,
+                habitId: habitId,
+                logDate: logDate,
+                value: value,
+                note: note,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int habitId,
+                required DateTime logDate,
+                Value<double?> value = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => HabitLogsCompanion.insert(
+                id: id,
+                habitId: habitId,
+                logDate: logDate,
+                value: value,
+                note: note,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$HabitLogsTable, HabitLog>(table),
+                  $$HabitLogsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({habitId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (habitId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.habitId,
+                        referencedTable: $$HabitLogsTableReferences
+                            ._habitIdTable(db),
+                        referencedColumn: $$HabitLogsTableReferences
+                            ._habitIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$HabitLogsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $HabitLogsTable,
+      HabitLog,
+      $$HabitLogsTableFilterComposer,
+      $$HabitLogsTableOrderingComposer,
+      $$HabitLogsTableAnnotationComposer,
+      $$HabitLogsTableCreateCompanionBuilder,
+      $$HabitLogsTableUpdateCompanionBuilder,
+      (HabitLog, $$HabitLogsTableReferences),
+      HabitLog,
+      PrefetchHooks Function({bool habitId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3442,4 +6304,10 @@ class $AppDatabaseManager {
       $$ExpensesTableTableManager(_db, _db.expenses);
   $$AlertsTableTableManager get alerts =>
       $$AlertsTableTableManager(_db, _db.alerts);
+  $$HabitCategoriesTableTableManager get habitCategories =>
+      $$HabitCategoriesTableTableManager(_db, _db.habitCategories);
+  $$HabitsTableTableManager get habits =>
+      $$HabitsTableTableManager(_db, _db.habits);
+  $$HabitLogsTableTableManager get habitLogs =>
+      $$HabitLogsTableTableManager(_db, _db.habitLogs);
 }

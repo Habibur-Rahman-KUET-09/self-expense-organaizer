@@ -91,3 +91,85 @@ class Alerts extends Table {
   /// Cumulative actual spend at the moment this alert was triggered.
   RealColumn get valueAtTrigger => real()();
 }
+
+/// Habit categories — kept as their own table rather than reusing the
+/// expense tracker's [Categories] (product decision: the two are tracked
+/// independently). Habit Tracker RS §2 "Reusability"/§8 open question #1.
+class HabitCategories extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text().withLength(min: 1, max: 100)();
+  IntColumn get colorValue =>
+      integer().withDefault(const Constant(0xFF6750A4))();
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+  DateTimeColumn get createdAt =>
+      dateTime().withDefault(currentDateAndTime)();
+}
+
+/// A user-defined recurring activity to track. Habit Tracker RS §3/§4.1/§6.
+class Habits extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text().withLength(min: 1, max: 100)();
+
+  /// A single emoji/short glyph shown as the habit's icon, or null.
+  TextColumn get icon => text().nullable()();
+  IntColumn get colorValue =>
+      integer().withDefault(const Constant(0xFF6750A4))();
+  IntColumn get categoryId =>
+      integer().nullable().references(HabitCategories, #id)();
+
+  TextColumn get type => textEnum<HabitType>()();
+
+  TextColumn get frequencyType => textEnum<HabitFrequencyType>()();
+
+  /// JSON-encoded config whose shape depends on [frequencyType] — see
+  /// FrequencySchedule (lib/logic/frequency_schedule.dart) for the shapes
+  /// and how each is interpreted. Kept as JSON rather than rigid columns so
+  /// new frequency patterns can be added later without a schema change
+  /// (Habit Tracker RS §5 "dynamicity").
+  TextColumn get frequencyConfig =>
+      text().withDefault(const Constant('{}'))();
+
+  /// Quantifiable habits' daily target (e.g. 8 glasses, 30 minutes). Null
+  /// for binary habits, or a quantifiable habit tracked without a fixed goal.
+  RealColumn get targetValue => real().nullable()();
+  TextColumn get unit => text().nullable()();
+
+  DateTimeColumn get startDate => dateTime()();
+  DateTimeColumn get endDate => dateTime().nullable()();
+
+  /// Archive instead of delete, so historical logs stay intact — same
+  /// pattern as Categories.isActive.
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+
+  /// User-controlled ordering/pinning on the Today view (Habit Tracker RS
+  /// §4.1).
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+
+  DateTimeColumn get createdAt =>
+      dateTime().withDefault(currentDateAndTime)();
+}
+
+/// A single day's record that a habit was done (binary) or its measured
+/// value (quantifiable). Habit Tracker RS §3/§4.2/§6.
+class HabitLogs extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get habitId => integer().references(Habits, #id)();
+
+  /// Calendar day this log is for, normalized to midnight — a habit has at
+  /// most one log per day (see [uniqueKeys]); logging again for the same
+  /// day replaces it rather than adding a second entry.
+  DateTimeColumn get logDate => dateTime()();
+
+  /// Null for binary habits (the row's mere presence means "done"). For
+  /// quantifiable habits, the measured amount logged for that day.
+  RealColumn get value => real().nullable()();
+  TextColumn get note => text().nullable()();
+
+  DateTimeColumn get createdAt =>
+      dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {habitId, logDate},
+      ];
+}

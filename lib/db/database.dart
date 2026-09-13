@@ -12,7 +12,9 @@ import 'tables.dart';
 
 part 'database.g.dart';
 
-@DriftDatabase(tables: [Categories, Budgets, Expenses, Alerts])
+@DriftDatabase(
+  tables: [Categories, Budgets, Expenses, Alerts, HabitCategories, Habits, HabitLogs],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
       : super(executor ?? _openConnection());
@@ -21,7 +23,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -32,6 +34,13 @@ class AppDatabase extends _$AppDatabase {
         // SQLite can't alter a column's nullability in place, so recreate
         // the table and copy existing rows across.
         await m.alterTable(TableMigration(budgets, newColumns: [budgets.noAlert]));
+      }
+      if (from < 3) {
+        // v3: the Habit Tracker module's tables — purely additive, no
+        // existing table is touched.
+        await m.createTable(habitCategories);
+        await m.createTable(habits);
+        await m.createTable(habitLogs);
       }
     },
   );

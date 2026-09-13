@@ -4,6 +4,7 @@ import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:expense_tracker/db/database.dart';
 import 'package:expense_tracker/models/dashboard_summary.dart';
+import 'package:expense_tracker/models/enums.dart';
 import 'package:expense_tracker/providers/dashboard_providers.dart';
 import 'package:expense_tracker/providers/database_providers.dart';
 import 'package:expense_tracker/providers/service_providers.dart';
@@ -290,6 +291,37 @@ void main() {
       expect(decoded['expenses'], hasLength(1));
       expect((decoded['expenses'] as List).first['note'], 'Lunch');
       expect(decoded['alerts'], isEmpty);
+      // Present (even if empty) so a restore can always find these keys.
+      expect(decoded['habitCategories'], isEmpty);
+      expect(decoded['habits'], isEmpty);
+      expect(decoded['habitLogs'], isEmpty);
+    });
+
+    test('JSON backup includes habit categories, habits, and habit logs', () async {
+      final habitCategoryId = await container
+          .read(habitCategoryRepositoryProvider)
+          .add(name: 'Wellness');
+      final habitId = await container.read(habitRepositoryProvider).add(
+        HabitsCompanion.insert(
+          name: 'Meditate',
+          categoryId: Value(habitCategoryId),
+          type: HabitType.binary,
+          frequencyType: HabitFrequencyType.daily,
+          startDate: DateTime(2026, 9, 1),
+        ),
+      );
+      await container
+          .read(habitLogRepositoryProvider)
+          .logDay(habitId: habitId, date: DateTime(2026, 9, 1));
+
+      final json = await BackupService(db).buildJsonBackup();
+      final decoded = jsonDecode(json) as Map<String, dynamic>;
+
+      expect(decoded['habitCategories'], hasLength(1));
+      expect((decoded['habitCategories'] as List).first['name'], 'Wellness');
+      expect(decoded['habits'], hasLength(1));
+      expect((decoded['habits'] as List).first['name'], 'Meditate');
+      expect(decoded['habitLogs'], hasLength(1));
     });
 
     test('CSV export lists expenses with resolved category names', () async {
@@ -352,6 +384,22 @@ void main() {
           note: const Value('Lunch'),
         ),
       );
+      final habitCategoryId = await container
+          .read(habitCategoryRepositoryProvider)
+          .add(name: 'Wellness');
+      final habitId = await container.read(habitRepositoryProvider).add(
+        HabitsCompanion.insert(
+          name: 'Meditate',
+          categoryId: Value(habitCategoryId),
+          type: HabitType.binary,
+          frequencyType: HabitFrequencyType.daily,
+          startDate: DateTime(2026, 9, 1),
+        ),
+      );
+      await container
+          .read(habitLogRepositoryProvider)
+          .logDay(habitId: habitId, date: DateTime(2026, 9, 1));
+
       final json = await BackupService(db).buildJsonBackup();
 
       final freshDb = AppDatabase.forTesting(NativeDatabase.memory());
@@ -361,6 +409,9 @@ void main() {
       expect(summary.categories, 2);
       expect(summary.budgets, 1);
       expect(summary.expenses, 1);
+      expect(summary.habitCategories, 1);
+      expect(summary.habits, 1);
+      expect(summary.habitLogs, 1);
 
       final restoredGroceries = await (freshDb.select(
         freshDb.categories,
@@ -372,7 +423,45 @@ void main() {
       expect(restoredExpense.categoryId, groceriesId);
       expect(restoredExpense.amount, 250);
       expect(restoredExpense.note, 'Lunch');
+
+      final restoredHabit = await freshDb.select(freshDb.habits).getSingle();
+      expect(restoredHabit.name, 'Meditate');
+      expect(restoredHabit.categoryId, habitCategoryId); // link to Wellness preserved
+      final restoredLog = await freshDb.select(freshDb.habitLogs).getSingle();
+      expect(restoredLog.habitId, habitId);
     });
+
+    test(
+      'restores a pre-Habit-Tracker backup (no habit keys) without error, per the '
+      'backward-compatibility rule that older backups must keep restoring',
+      () async {
+        final categoryRepo = container.read(categoryRepositoryProvider);
+        await categoryRepo.add(name: 'Old Category');
+        final oldFormatJson = jsonEncode({
+          'exportedAt': DateTime(2026, 1, 1).toIso8601String(),
+          'categories': [
+            {
+              'id': 1,
+              'name': 'Legacy',
+              'parentId': null,
+              'isActive': true,
+              'colorValue': 0xFF6750A4,
+              'createdAt': DateTime(2026, 1, 1).toIso8601String(),
+            },
+          ],
+          'budgets': [],
+          'expenses': [],
+          'alerts': [],
+        });
+
+        final summary = await BackupService(db).restoreFromJson(oldFormatJson);
+
+        expect(summary.categories, 1);
+        expect(summary.habitCategories, 0);
+        expect(summary.habits, 0);
+        expect(summary.habitLogs, 0);
+      },
+    );
 
     test('restore replaces existing data rather than merging with it', () async {
       final categoryRepo = container.read(categoryRepositoryProvider);

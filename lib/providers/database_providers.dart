@@ -5,6 +5,9 @@ import '../repositories/alert_repository.dart';
 import '../repositories/budget_repository.dart';
 import '../repositories/category_repository.dart';
 import '../repositories/expense_repository.dart';
+import '../repositories/habit_category_repository.dart';
+import '../repositories/habit_log_repository.dart';
+import '../repositories/habit_repository.dart';
 
 /// Single app-lifetime database connection. Everything else (repositories,
 /// screens) reaches the database only through this provider.
@@ -28,4 +31,16 @@ final expenseRepositoryProvider = Provider<ExpenseRepository>((ref) {
 
 final alertRepositoryProvider = Provider<AlertRepository>((ref) {
   return AlertRepository(ref.watch(appDatabaseProvider));
+});
+
+final habitCategoryRepositoryProvider = Provider<HabitCategoryRepository>((ref) {
+  return HabitCategoryRepository(ref.watch(appDatabaseProvider));
+});
+
+final habitRepositoryProvider = Provider<HabitRepository>((ref) {
+  return HabitRepository(ref.watch(appDatabaseProvider));
+});
+
+final habitLogRepositoryProvider = Provider<HabitLogRepository>((ref) {
+  return HabitLogRepository(ref.watch(appDatabaseProvider));
 });

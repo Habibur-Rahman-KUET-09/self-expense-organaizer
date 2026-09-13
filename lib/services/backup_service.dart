@@ -32,12 +32,19 @@ class BackupService {
     final expenses = await _db.select(_db.expenses).get();
     final alerts = await _db.select(_db.alerts).get();
 
+    final habitCategories = await _db.select(_db.habitCategories).get();
+    final habits = await _db.select(_db.habits).get();
+    final habitLogs = await _db.select(_db.habitLogs).get();
+
     final payload = {
       'exportedAt': DateTime.now().toIso8601String(),
       'categories': categories.map((c) => c.toJson()).toList(),
       'budgets': budgets.map((b) => b.toJson()).toList(),
       'expenses': expenses.map((e) => e.toJson()).toList(),
       'alerts': alerts.map((a) => a.toJson()).toList(),
+      'habitCategories': habitCategories.map((c) => c.toJson()).toList(),
+      'habits': habits.map((h) => h.toJson()).toList(),
+      'habitLogs': habitLogs.map((l) => l.toJson()).toList(),
     };
     return const JsonEncoder.withIndent('  ').convert(payload);
   }
@@ -115,11 +122,22 @@ class BackupService {
         );
       }
     }
+    // The Habit Tracker tables are newer than this backup format — treat
+    // them as optional so a backup taken before that module existed can
+    // still be restored (falls back to no habit data).
+    for (final key in const ['habitCategories', 'habits', 'habitLogs']) {
+      if (decoded[key] != null && decoded[key] is! List) {
+        throw InvalidBackupException('That backup file is corrupted (bad "$key").');
+      }
+    }
 
     final List<Category> categories;
     final List<Budget> budgets;
     final List<Expense> expenses;
     final List<Alert> alerts;
+    final List<HabitCategory> habitCategories;
+    final List<Habit> habits;
+    final List<HabitLog> habitLogs;
     try {
       categories = (decoded['categories'] as List)
           .map((e) => Category.fromJson(e as Map<String, dynamic>))
@@ -132,6 +150,15 @@ class BackupService {
           .toList();
       alerts = (decoded['alerts'] as List)
           .map((e) => Alert.fromJson(e as Map<String, dynamic>))
+          .toList();
+      habitCategories = ((decoded['habitCategories'] as List?) ?? const [])
+          .map((e) => HabitCategory.fromJson(e as Map<String, dynamic>))
+          .toList();
+      habits = ((decoded['habits'] as List?) ?? const [])
+          .map((e) => Habit.fromJson(e as Map<String, dynamic>))
+          .toList();
+      habitLogs = ((decoded['habitLogs'] as List?) ?? const [])
+          .map((e) => HabitLog.fromJson(e as Map<String, dynamic>))
           .toList();
     } catch (e) {
       throw InvalidBackupException('That backup file is corrupted ($e).');
@@ -147,6 +174,9 @@ class BackupService {
       await _db.delete(_db.expenses).go();
       await _db.delete(_db.budgets).go();
       await _db.delete(_db.categories).go();
+      await _db.delete(_db.habitLogs).go();
+      await _db.delete(_db.habits).go();
+      await _db.delete(_db.habitCategories).go();
 
       for (final category in categories) {
         await _db.into(_db.categories).insert(category);
@@ -160,6 +190,15 @@ class BackupService {
       for (final alert in alerts) {
         await _db.into(_db.alerts).insert(alert);
       }
+      for (final category in habitCategories) {
+        await _db.into(_db.habitCategories).insert(category);
+      }
+      for (final habit in habits) {
+        await _db.into(_db.habits).insert(habit);
+      }
+      for (final log in habitLogs) {
+        await _db.into(_db.habitLogs).insert(log);
+      }
     });
 
     return RestoreSummary(
@@ -167,6 +206,9 @@ class BackupService {
       budgets: budgets.length,
       expenses: expenses.length,
       alerts: alerts.length,
+      habitCategories: habitCategories.length,
+      habits: habits.length,
+      habitLogs: habitLogs.length,
     );
   }
 }
@@ -177,10 +219,16 @@ class RestoreSummary {
     required this.budgets,
     required this.expenses,
     required this.alerts,
+    this.habitCategories = 0,
+    this.habits = 0,
+    this.habitLogs = 0,
   });
 
   final int categories;
   final int budgets;
   final int expenses;
   final int alerts;
+  final int habitCategories;
+  final int habits;
+  final int habitLogs;
 }
