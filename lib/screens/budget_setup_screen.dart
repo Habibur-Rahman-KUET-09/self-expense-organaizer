@@ -13,7 +13,6 @@ import '../providers/database_providers.dart';
 import '../providers/expense_providers.dart';
 import '../widgets/budget_editor_sheet.dart';
 import '../widgets/category_form_dialog.dart';
-import '../widgets/backup_menu_button.dart';
 import '../widgets/month_selector.dart';
 
 final _currencyFormat = NumberFormat.currency(symbol: currencySymbol, decimalDigits: 0);
@@ -57,7 +56,6 @@ class _BudgetSetupScreenState extends ConsumerState<BudgetSetupScreen> {
       appBar: AppBar(
         title: const Text('Budget Setup'),
         actions: [
-          const BackupMenuButton(),
           IconButton(
             tooltip: _hideAmounts ? 'Show amounts' : 'Hide amounts',
             icon: Icon(_hideAmounts ? Icons.visibility_off : Icons.visibility),

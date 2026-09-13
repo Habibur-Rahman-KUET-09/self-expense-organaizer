@@ -59,7 +59,10 @@ class _HabitsScreenState extends ConsumerState<HabitsScreen>
         ],
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [Tab(text: 'Today'), Tab(text: 'Manage')],
+          // Named "Check-in" rather than "Today" — the tab's own content
+          // already has a "Today"/date label (DaySelector) directly below
+          // it, and two "Today"s stacked on screen at once read as a bug.
+          tabs: const [Tab(text: 'Check-in'), Tab(text: 'Manage')],
         ),
       ),
       body: TabBarView(

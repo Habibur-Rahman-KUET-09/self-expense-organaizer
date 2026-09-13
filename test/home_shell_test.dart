@@ -8,7 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('bottom nav switches between all four tabs, and quick links jump tabs', (
+  testWidgets('bottom nav switches between all five tabs', (
     tester,
   ) async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
@@ -17,7 +17,7 @@ void main() {
     );
     addTearDown(db.close);
 
-    // Seed a budget so the Dashboard renders its normal (quick-links) view
+    // Seed a budget so the Dashboard renders its normal summary view
     // instead of the "no budgets yet" empty state.
     final now = DateTime.now();
     final categoryId = await container
@@ -56,14 +56,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.widgetWithText(AppBar, 'Reports'), findsOneWidget);
 
-    // Back to Dashboard, then use its quick link to jump to Add Expense.
+    await tester.tap(find.text('Habits'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(AppBar, 'Habits'), findsOneWidget);
+
+    // Back to Dashboard.
     await tester.tap(find.text('Dashboard'));
     await tester.pumpAndSettle();
-    // Disambiguate from AddExpenseScreen's own (offstage but still built)
-    // AppBar title, which carries the same text.
-    await tester.tap(find.widgetWithText(InkWell, 'Add Expense'));
-    await tester.pumpAndSettle();
-    expect(find.widgetWithText(AppBar, 'Add Expense'), findsOneWidget);
+    expect(find.widgetWithText(AppBar, 'Dashboard'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
     container.dispose();

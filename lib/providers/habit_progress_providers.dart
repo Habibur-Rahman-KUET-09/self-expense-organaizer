@@ -11,6 +11,21 @@ import 'database_providers.dart';
 import 'habit_log_providers.dart';
 import 'habit_providers.dart';
 
+/// Today's overall completion score — exposed at the top level (not just
+/// inside the Habits tab) so cross-module summaries like the expense
+/// Dashboard's small habit status card can show it without reaching into
+/// the full per-habit list themselves.
+final todayHabitScoreProvider = FutureProvider.autoDispose<DailyHabitScore>((
+  ref,
+) async {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final progress = await ref.watch(habitProgressForDateProvider(today).future);
+  final due = progress.where((p) => p.isDue).toList();
+  final done = due.where((p) => p.isCompleted).length;
+  return (done: done, total: due.length);
+});
+
 /// Habit Tracker RS §4.2 (Today screen, browsable to any past day for
 /// backfilling) + §4.3 (streaks) — every active habit's due/log/completed
 /// state for [date], reactive to habit/log changes. [date] should be

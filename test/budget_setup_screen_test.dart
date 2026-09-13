@@ -34,16 +34,9 @@ void main() {
 
     expect(find.text('No categories yet — tap + to add one.'), findsOneWidget);
 
-    // Export action is present (NFR-6). Only open the menu — actually
-    // selecting an item would hit share_plus's platform channel, which
-    // isn't mocked in this test environment.
-    expect(find.byIcon(Icons.ios_share), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.ios_share));
-    await tester.pumpAndSettle();
-    expect(find.text('Export full backup (JSON)'), findsOneWidget);
-    expect(find.text('Export expenses (CSV)'), findsOneWidget);
-    await tester.tapAt(const Offset(10, 10)); // dismiss the menu
-    await tester.pumpAndSettle();
+    // Export/import now lives on the Dashboard's app bar only (NFR-6) — not
+    // duplicated here.
+    expect(find.byIcon(Icons.ios_share), findsNothing);
 
     // Add a category via the FAB dialog.
     await tester.tap(find.byIcon(Icons.add));

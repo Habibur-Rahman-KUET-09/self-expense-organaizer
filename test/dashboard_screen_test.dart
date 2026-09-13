@@ -93,4 +93,75 @@ void main() {
       await _teardown(tester, container);
     },
   );
+
+  testWidgets(
+    'shows a habit status card only when a habit is due today, independent of budgets',
+    (tester) async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final container = ProviderContainer(
+        overrides: [appDatabaseProvider.overrideWithValue(db)],
+      );
+      addTearDown(db.close);
+
+      await tester.pumpWidget(_wrap(container));
+      await tester.pumpAndSettle();
+
+      // No habits yet — the card doesn't clutter the empty-budgets state.
+      expect(find.textContaining('habits done today'), findsNothing);
+
+      final habitId = await container.read(habitRepositoryProvider).add(
+        HabitsCompanion.insert(
+          name: 'Meditate',
+          type: HabitType.binary,
+          frequencyType: HabitFrequencyType.daily,
+          startDate: DateTime.now(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('0 / 1 habits done today'), findsOneWidget);
+
+      await container
+          .read(habitLogRepositoryProvider)
+          .logDay(habitId: habitId, date: DateTime.now());
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('1 / 1 habits done today'), findsOneWidget);
+
+      await _teardown(tester, container);
+    },
+  );
+
+  testWidgets('the backup menu is grouped into Expense Tracker and Habit sections', (
+    tester,
+  ) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final container = ProviderContainer(
+      overrides: [appDatabaseProvider.overrideWithValue(db)],
+    );
+    addTearDown(db.close);
+
+    await tester.pumpWidget(_wrap(container));
+    await tester.pumpAndSettle();
+
+    // Only open the menu — actually selecting an item would hit
+    // share_plus's platform channel, which isn't mocked in this test
+    // environment.
+    expect(find.byIcon(Icons.ios_share), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.ios_share));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Expense Tracker'), findsOneWidget);
+    expect(find.text('Export full backup (JSON)'), findsOneWidget);
+    expect(find.text('Export expenses (CSV)'), findsOneWidget);
+    expect(find.text('Import backup (JSON)'), findsOneWidget);
+    expect(find.text('Habit'), findsOneWidget);
+    expect(find.text('Export habit backup (JSON)'), findsOneWidget);
+    expect(find.text('Import habit backup (JSON)'), findsOneWidget);
+
+    await tester.tapAt(const Offset(10, 10)); // dismiss the menu
+    await tester.pumpAndSettle();
+
+    await _teardown(tester, container);
+  });
 }

@@ -10,7 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   testWidgets(
-    'add a binary habit, then log it from the Today tab (Habit Tracker RS §4.1/§4.2)',
+    'add a binary habit, then log it from the Check-in tab (Habit Tracker RS §4.1/§4.2)',
     (tester) async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       // Own the ProviderContainer ourselves so it can be disposed inside the
@@ -29,7 +29,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Starts on "Today", empty.
+      // Starts on Check-in, empty.
       expect(find.textContaining('No habits due today'), findsOneWidget);
 
       // Switch to Manage and add a habit via the FAB.
@@ -47,8 +47,8 @@ void main() {
 
       expect(find.text('Meditate'), findsOneWidget);
 
-      // Back on Today, it shows up as due with an unchecked toggle.
-      await tester.tap(find.text('Today'));
+      // Back on Check-in, it shows up as due with an unchecked toggle.
+      await tester.tap(find.text('Check-in'));
       await tester.pumpAndSettle();
       expect(find.text('Meditate'), findsOneWidget);
       expect(find.textContaining('0 / 1 habits done today'), findsOneWidget);
@@ -104,7 +104,7 @@ void main() {
       await tester.tap(find.widgetWithText(FilledButton, 'Save'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Today'));
+      await tester.tap(find.text('Check-in'));
       await tester.pumpAndSettle();
       expect(find.text('Log'), findsOneWidget);
 
@@ -150,16 +150,16 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // The day selector shows "Today" alongside the "Today" tab label —
-      // two distinct widgets on screen at once.
-      expect(find.text('Today'), findsNWidgets(2));
+      // The day selector shows "Today" (the tab itself is labeled
+      // "Check-in", so there's no longer a duplicate "Today" on screen).
+      expect(find.text('Today'), findsOneWidget);
       expect(find.byType(HabitOverviewChart), findsOneWidget);
       expect(find.byIcon(Icons.radio_button_unchecked), findsOneWidget);
 
       // Go back one day and log it there (backfill) — a real date, not "Today".
       await tester.tap(find.byIcon(Icons.chevron_left));
       await tester.pumpAndSettle();
-      expect(find.text('Today'), findsOneWidget); // only the tab label now
+      expect(find.text('Today'), findsNothing);
       await tester.tap(find.byIcon(Icons.radio_button_unchecked));
       await tester.pumpAndSettle();
       expect(find.byIcon(Icons.check_circle), findsOneWidget);
@@ -167,7 +167,7 @@ void main() {
       // Back to today: today's own log is untouched by the backfill.
       await tester.tap(find.byIcon(Icons.chevron_right));
       await tester.pumpAndSettle();
-      expect(find.text('Today'), findsNWidgets(2));
+      expect(find.text('Today'), findsOneWidget);
       expect(find.byIcon(Icons.radio_button_unchecked), findsOneWidget);
 
       await tester.pumpWidget(const SizedBox.shrink());
