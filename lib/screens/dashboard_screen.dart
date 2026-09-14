@@ -88,26 +88,31 @@ class _HabitStatusCard extends ConsumerWidget {
     return scoreAsync.when(
       data: (score) {
         if (score.total == 0) return const SizedBox.shrink();
+        final onContainerColor = Theme.of(context).colorScheme.onSecondaryContainer;
         return Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
           child: Card(
             color: Theme.of(context).colorScheme.secondaryContainer,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.checklist,
-                    color: Theme.of(context).colorScheme.onSecondaryContainer,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    '${score.done} / ${score.total} habits done today',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSecondaryContainer,
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: () => ref.read(bottomNavIndexProvider.notifier).state = 4,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  children: [
+                    Icon(Icons.checklist, color: onContainerColor),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        '${score.done} / ${score.total} habits done today',
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleMedium?.copyWith(color: onContainerColor),
+                      ),
                     ),
-                  ),
-                ],
+                    Icon(Icons.chevron_right, color: onContainerColor),
+                  ],
+                ),
               ),
             ),
           ),

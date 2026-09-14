@@ -8,6 +8,7 @@ import '../logic/frequency_schedule.dart';
 import '../models/enums.dart';
 import '../providers/database_providers.dart';
 import '../providers/habit_category_providers.dart';
+import 'emoji_icon_picker.dart';
 import 'habit_category_form_dialog.dart';
 
 typedef HabitFormResult = ({
@@ -52,7 +53,7 @@ class HabitEditorSheet extends ConsumerStatefulWidget {
 class _HabitEditorSheetState extends ConsumerState<HabitEditorSheet> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
-  late final TextEditingController _iconController;
+  String? _icon;
   late final TextEditingController _targetController;
   late final TextEditingController _unitController;
   late final TextEditingController _countController;
@@ -71,7 +72,7 @@ class _HabitEditorSheetState extends ConsumerState<HabitEditorSheet> {
     super.initState();
     final existing = widget.existing;
     _nameController = TextEditingController(text: existing?.name ?? '');
-    _iconController = TextEditingController(text: existing?.icon ?? '');
+    _icon = existing?.icon;
     _targetController = TextEditingController(
       text: existing?.targetValue != null ? _trimTrailingZero(existing!.targetValue!) : '',
     );
@@ -101,7 +102,6 @@ class _HabitEditorSheetState extends ConsumerState<HabitEditorSheet> {
   @override
   void dispose() {
     _nameController.dispose();
-    _iconController.dispose();
     _targetController.dispose();
     _unitController.dispose();
     _countController.dispose();
@@ -128,16 +128,11 @@ class _HabitEditorSheetState extends ConsumerState<HabitEditorSheet> {
               ),
               const SizedBox(height: 16),
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  SizedBox(
-                    width: 72,
-                    child: TextFormField(
-                      controller: _iconController,
-                      maxLength: 2,
-                      textAlign: TextAlign.center,
-                      decoration: const InputDecoration(labelText: 'Icon', counterText: ''),
-                    ),
+                  HabitIconButton(
+                    icon: _icon,
+                    onChanged: (value) => setState(() => _icon = value),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -428,11 +423,10 @@ class _HabitEditorSheetState extends ConsumerState<HabitEditorSheet> {
 
     final targetText = _targetController.text.trim();
     final unitText = _unitController.text.trim();
-    final iconText = _iconController.text.trim();
 
     Navigator.of(context).pop((
       name: _nameController.text.trim(),
-      icon: iconText.isEmpty ? null : iconText,
+      icon: _icon,
       colorValue: _colorValue,
       categoryId: _categoryId,
       type: _type,

@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:expense_tracker/db/database.dart';
+import 'package:expense_tracker/models/enums.dart';
 import 'package:expense_tracker/providers/database_providers.dart';
 import 'package:expense_tracker/screens/home_shell.dart';
 import 'package:flutter/material.dart';
@@ -64,6 +65,45 @@ void main() {
     await tester.tap(find.text('Dashboard'));
     await tester.pumpAndSettle();
     expect(find.widgetWithText(AppBar, 'Dashboard'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    container.dispose();
+    await tester.pump(const Duration(milliseconds: 1));
+  });
+
+  testWidgets('tapping the Dashboard habit status card jumps to the Habits tab', (
+    tester,
+  ) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final container = ProviderContainer(
+      overrides: [appDatabaseProvider.overrideWithValue(db)],
+    );
+    addTearDown(db.close);
+
+    await container.read(habitRepositoryProvider).add(
+      HabitsCompanion.insert(
+        name: 'Meditate',
+        type: HabitType.binary,
+        frequencyType: HabitFrequencyType.daily,
+        startDate: DateTime.now(),
+      ),
+    );
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: HomeShell()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(AppBar, 'Dashboard'), findsOneWidget);
+    expect(find.textContaining('habits done today'), findsOneWidget);
+
+    await tester.tap(find.textContaining('habits done today'));
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(AppBar, 'Habits'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
     container.dispose();

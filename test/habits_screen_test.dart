@@ -39,9 +39,9 @@ void main() {
 
       await tester.tap(find.byIcon(Icons.add));
       await tester.pumpAndSettle();
-      // Icon field is TextFormField #0, name is #1 — defaults (binary,
-      // daily, starting today) are otherwise fine for this habit.
-      await tester.enterText(find.byType(TextFormField).at(1), 'Meditate');
+      // Name is TextFormField #0 (the icon picker isn't a text field) —
+      // defaults (binary, daily, starting today) are otherwise fine here.
+      await tester.enterText(find.byType(TextFormField).at(0), 'Meditate');
       await tester.tap(find.widgetWithText(FilledButton, 'Save'));
       await tester.pumpAndSettle();
 
@@ -90,13 +90,13 @@ void main() {
       await tester.tap(find.byIcon(Icons.add));
       await tester.pumpAndSettle();
 
-      await tester.enterText(find.byType(TextFormField).at(1), 'Water');
+      await tester.enterText(find.byType(TextFormField).at(0), 'Water');
       await tester.tap(find.text('Numeric target'));
       await tester.pumpAndSettle();
-      // With the type switched, TextFormFields are: icon(0), name(1),
-      // target(2), unit(3).
-      await tester.enterText(find.byType(TextFormField).at(2), '8');
-      await tester.enterText(find.byType(TextFormField).at(3), 'glasses');
+      // With the type switched, TextFormFields are: name(0), target(1),
+      // unit(2) — the icon picker isn't a text field.
+      await tester.enterText(find.byType(TextFormField).at(1), '8');
+      await tester.enterText(find.byType(TextFormField).at(2), 'glasses');
       // The extra target/unit fields push Save below the fold in the test
       // viewport — scroll it into view before tapping.
       await tester.ensureVisible(find.widgetWithText(FilledButton, 'Save'));
@@ -175,4 +175,99 @@ void main() {
       await tester.pump(const Duration(milliseconds: 1));
     },
   );
+
+  testWidgets('the icon picker sets and clears a habit\'s emoji icon', (tester) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final container = ProviderContainer(
+      overrides: [appDatabaseProvider.overrideWithValue(db)],
+    );
+    addTearDown(db.close);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: HabitsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Manage'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+
+    // No icon chosen yet — the button shows the placeholder glyph.
+    expect(find.byIcon(Icons.add_reaction_outlined), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.add_reaction_outlined));
+    await tester.pumpAndSettle();
+    expect(find.text('Choose an icon'), findsOneWidget);
+
+    await tester.tap(find.text('🏃'));
+    await tester.pumpAndSettle();
+
+    // Placeholder is gone; the chosen emoji now shows on the button.
+    expect(find.byIcon(Icons.add_reaction_outlined), findsNothing);
+    expect(find.text('🏃'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextFormField).at(0), 'Run');
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    // The saved habit's list tile uses the emoji, not its name's initial.
+    expect(find.text('🏃'), findsOneWidget);
+    expect(find.text('R'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    container.dispose();
+    await tester.pump(const Duration(milliseconds: 1));
+  });
+
+  testWidgets('dragging a habit\'s handle in Manage persists the new order (RS §4.1 pinning)', (
+    tester,
+  ) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final container = ProviderContainer(
+      overrides: [appDatabaseProvider.overrideWithValue(db)],
+    );
+    addTearDown(db.close);
+
+    final habitRepo = container.read(habitRepositoryProvider);
+    for (final name in ['Alpha', 'Bravo', 'Charlie']) {
+      await habitRepo.add(
+        HabitsCompanion.insert(
+          name: name,
+          type: HabitType.binary,
+          frequencyType: HabitFrequencyType.daily,
+          startDate: DateTime.now(),
+        ),
+      );
+    }
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: HabitsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Manage'));
+    await tester.pumpAndSettle();
+
+    // All start with sortOrder 0, so they list alphabetically: Alpha first.
+    final initialOrder = await habitRepo.getAll();
+    expect(initialOrder.map((h) => h.name), ['Alpha', 'Bravo', 'Charlie']);
+
+    // Drag Alpha's handle down past the other two rows.
+    await tester.drag(find.byIcon(Icons.drag_handle).first, const Offset(0, 500));
+    await tester.pumpAndSettle();
+
+    final reordered = await habitRepo.getAll();
+    expect(reordered.first.name, isNot('Alpha'));
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    container.dispose();
+    await tester.pump(const Duration(milliseconds: 1));
+  });
 }

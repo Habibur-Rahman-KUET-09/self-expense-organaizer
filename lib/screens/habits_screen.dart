@@ -245,10 +245,19 @@ class _ManageTabState extends ConsumerState<_ManageTab> {
               if (habits.isEmpty) {
                 return const Center(child: Text('No habits yet — tap + to add one.'));
               }
-              return ListView.builder(
+              // Drag to reorder/pin (Habit Tracker RS §4.1) — persists via
+              // HabitRepository.reorder, which the Today tab's ordering
+              // already follows.
+              return ReorderableListView.builder(
                 padding: const EdgeInsets.only(bottom: 96),
+                buildDefaultDragHandles: false,
                 itemCount: habits.length,
-                itemBuilder: (context, index) => _ManageHabitTile(habit: habits[index]),
+                onReorderItem: (oldIndex, newIndex) => _reorder(habits, oldIndex, newIndex),
+                itemBuilder: (context, index) => _ManageHabitTile(
+                  key: ValueKey(habits[index].id),
+                  habit: habits[index],
+                  index: index,
+                ),
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -258,12 +267,25 @@ class _ManageTabState extends ConsumerState<_ManageTab> {
       ],
     );
   }
+
+  Future<void> _reorder(List<Habit> habits, int oldIndex, int newIndex) async {
+    // onReorderItem (unlike the deprecated onReorder) already adjusts
+    // newIndex for the removed item at oldIndex.
+    final reordered = List<Habit>.of(habits);
+    final moved = reordered.removeAt(oldIndex);
+    reordered.insert(newIndex, moved);
+    await ref.read(habitRepositoryProvider).reorder(reordered.map((h) => h.id).toList());
+  }
 }
 
 class _ManageHabitTile extends ConsumerWidget {
-  const _ManageHabitTile({required this.habit});
+  const _ManageHabitTile({super.key, required this.habit, required this.index});
 
   final Habit habit;
+
+  /// This tile's position in the ReorderableListView — required by
+  /// [ReorderableDragStartListener] to report drags back to onReorder.
+  final int index;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -284,15 +306,27 @@ class _ManageHabitTile extends ConsumerWidget {
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => HabitDetailScreen(habitId: habit.id)),
         ),
-        trailing: PopupMenuButton<String>(
-          onSelected: (action) => _handle(context, ref, action),
-          itemBuilder: (context) => [
-            const PopupMenuItem(value: 'edit', child: Text('Edit')),
-            PopupMenuItem(
-              value: 'toggle_active',
-              child: Text(habit.isActive ? 'Archive' : 'Unarchive'),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            PopupMenuButton<String>(
+              onSelected: (action) => _handle(context, ref, action),
+              itemBuilder: (context) => [
+                const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                PopupMenuItem(
+                  value: 'toggle_active',
+                  child: Text(habit.isActive ? 'Archive' : 'Unarchive'),
+                ),
+                const PopupMenuItem(value: 'delete', child: Text('Delete')),
+              ],
             ),
-            const PopupMenuItem(value: 'delete', child: Text('Delete')),
+            ReorderableDragStartListener(
+              index: index,
+              child: const Padding(
+                padding: EdgeInsets.only(left: 4),
+                child: Icon(Icons.drag_handle),
+              ),
+            ),
           ],
         ),
       ),
