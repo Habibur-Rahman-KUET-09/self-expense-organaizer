@@ -59,7 +59,7 @@ class HabitCategoryRepository {
   Future<void> delete(int id) async {
     final hasHabits = await (_db.select(
       _db.habits,
-    )..where((h) => h.categoryId.equals(id))).get();
+    )..where((h) => h.categoryId.equals(id))..limit(1)).get();
     if (hasHabits.isNotEmpty) {
       throw StateError(
         'Category has habits attached — archive it instead of deleting.',

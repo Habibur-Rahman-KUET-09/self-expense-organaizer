@@ -102,14 +102,26 @@ class CategoryRepository {
   Future<void> delete(int id) async {
     final hasExpenses = await (_db.select(
       _db.expenses,
-    )..where((e) => e.categoryId.equals(id))).get();
+    )..where((e) => e.categoryId.equals(id))..limit(1)).get();
+    if (hasExpenses.isNotEmpty) {
+      throw StateError(
+        'Category has expenses, budgets, or sub-categories attached — '
+        'archive it instead of deleting.',
+      );
+    }
     final hasBudgets = await (_db.select(
       _db.budgets,
-    )..where((b) => b.categoryId.equals(id))).get();
+    )..where((b) => b.categoryId.equals(id))..limit(1)).get();
+    if (hasBudgets.isNotEmpty) {
+      throw StateError(
+        'Category has expenses, budgets, or sub-categories attached — '
+        'archive it instead of deleting.',
+      );
+    }
     final hasChildren = await (_db.select(
       _db.categories,
-    )..where((c) => c.parentId.equals(id))).get();
-    if (hasExpenses.isNotEmpty || hasBudgets.isNotEmpty || hasChildren.isNotEmpty) {
+    )..where((c) => c.parentId.equals(id))..limit(1)).get();
+    if (hasChildren.isNotEmpty) {
       throw StateError(
         'Category has expenses, budgets, or sub-categories attached — '
         'archive it instead of deleting.',

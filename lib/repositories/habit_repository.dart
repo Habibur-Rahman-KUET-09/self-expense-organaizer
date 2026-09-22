@@ -64,7 +64,7 @@ class HabitRepository {
   Future<void> delete(int id) async {
     final hasLogs = await (_db.select(
       _db.habitLogs,
-    )..where((l) => l.habitId.equals(id))).get();
+    )..where((l) => l.habitId.equals(id))..limit(1)).get();
     if (hasLogs.isNotEmpty) {
       throw StateError(
         'Habit has logged history — archive it instead of deleting.',
