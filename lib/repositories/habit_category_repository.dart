@@ -30,6 +30,7 @@ class HabitCategoryRepository {
     if (activeOnly) {
       query.where((c) => c.isActive.equals(true));
     }
+    query.orderBy([(c) => OrderingTerm.asc(c.name)]);
     return query.get();
   }
 

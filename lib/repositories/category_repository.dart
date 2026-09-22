@@ -9,7 +9,11 @@ class CategoryRepository {
   final AppDatabase _db;
 
   /// All categories, including archived ones (e.g. for historical reports).
-  Stream<List<Category>> watchAll() => _db.select(_db.categories).watch();
+  Stream<List<Category>> watchAll() {
+    final query = _db.select(_db.categories);
+    query.orderBy([(c) => OrderingTerm.asc(c.name)]);
+    return query.watch();
+  }
 
   /// Top-level categories (no parent). FR-1.1.
   Stream<List<Category>> watchTopLevel({bool activeOnly = true}) {
@@ -48,6 +52,7 @@ class CategoryRepository {
     if (activeOnly) {
       query.where((c) => c.isActive.equals(true));
     }
+    query.orderBy([(c) => OrderingTerm.asc(c.name)]);
     return query.get();
   }
 
@@ -61,6 +66,7 @@ class CategoryRepository {
     if (activeOnly) {
       query.where((c) => c.isActive.equals(true));
     }
+    query.orderBy([(c) => OrderingTerm.asc(c.name)]);
     return query.get();
   }
 

@@ -144,7 +144,8 @@ class _TodayTabState extends ConsumerState<_TodayTab> {
         Expanded(
           child: progressAsync.when(
             data: (progress) {
-              final due = progress.where((p) => p.isDue).toList();
+              final due = progress.where((p) => p.isDue).toList()
+                ..sort((a, b) => a.habit.name.compareTo(b.habit.name));
               final done = due.where((p) => p.isCompleted).length;
               return ListView(
                 padding: const EdgeInsets.only(bottom: 24),
