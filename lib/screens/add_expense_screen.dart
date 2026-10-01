@@ -8,14 +8,20 @@ import '../db/database.dart';
 import '../providers/category_providers.dart';
 import '../providers/database_providers.dart';
 import '../providers/expense_providers.dart';
+import '../widgets/expense_tile.dart';
+import 'all_expenses_screen.dart';
 
-final _currencyFormat = NumberFormat.currency(symbol: currencySymbol, decimalDigits: 0);
 final _dateFormat = DateFormat.yMMMd();
 
 /// FR-5: manual expense entry (amount, category/sub-category, date, note),
 /// plus editing/deleting past entries (FR-5.3).
+///
+/// With [editing] it is pushed as its own page (from All entries) to edit
+/// that one expense, and closes when saved.
 class AddExpenseScreen extends ConsumerStatefulWidget {
-  const AddExpenseScreen({super.key});
+  const AddExpenseScreen({super.key, this.editing});
+
+  final Expense? editing;
 
   @override
   ConsumerState<AddExpenseScreen> createState() => _AddExpenseScreenState();
@@ -30,6 +36,21 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
   Category? _selectedTopCategory;
   Category? _selectedSubCategory;
   DateTime _selectedDate = DateTime.now();
+
+  bool get _isEditPage => widget.editing != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final editing = widget.editing;
+    if (editing != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _loadForEditing(editing));
+    }
+  }
+
+  void _openAllEntries() {
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const AllExpensesScreen()));
+  }
 
   @override
   void dispose() {
@@ -46,7 +67,13 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
       appBar: AppBar(
         title: Text(_editingExpenseId == null ? 'Add Expense' : 'Edit Expense'),
         actions: [
-          if (_editingExpenseId != null)
+          if (!_isEditPage)
+            TextButton.icon(
+              onPressed: _openAllEntries,
+              icon: const Icon(Icons.list_alt),
+              label: const Text('All entries'),
+            ),
+          if (_editingExpenseId != null && !_isEditPage)
             TextButton(
               onPressed: () => setState(_resetForm),
               child: const Text('Cancel edit'),
@@ -177,10 +204,17 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
             onPressed: _save,
             child: Text(_editingExpenseId == null ? 'Add Expense' : 'Save Changes'),
           ),
-          const SizedBox(height: 32),
-          Text('Recent Expenses', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          _RecentExpensesList(onEdit: _loadForEditing),
+          if (!_isEditPage) ...[
+            const SizedBox(height: 32),
+            Row(
+              children: [
+                Expanded(child: Text('Recent Expenses', style: Theme.of(context).textTheme.titleMedium)),
+                TextButton(onPressed: _openAllEntries, child: const Text('See all')),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _RecentExpensesList(onEdit: _loadForEditing),
+          ],
         ],
       ),
     );
@@ -325,6 +359,11 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
 
     if (!mounted) return;
     final wasEditing = _editingExpenseId != null;
+    if (_isEditPage) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Expense updated')));
+      Navigator.of(context).pop();
+      return;
+    }
     setState(_resetForm);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(wasEditing ? 'Expense updated' : 'Expense added')),
@@ -380,7 +419,7 @@ class _RecentExpensesList extends ConsumerWidget {
         return Column(
           children: [
             for (final expense in expenses)
-              _ExpenseTile(
+              ExpenseTile(
                 expense: expense,
                 category: categoriesById[expense.categoryId],
                 parentCategory: () {
@@ -399,85 +438,5 @@ class _RecentExpensesList extends ConsumerWidget {
       ),
       error: (error, _) => Text('Error: $error'),
     );
-  }
-}
-
-class _ExpenseTile extends ConsumerWidget {
-  const _ExpenseTile({
-    required this.expense,
-    required this.category,
-    required this.parentCategory,
-    required this.onEdit,
-  });
-
-  final Expense expense;
-  final Category? category;
-  // Set only when [category] is a sub-category, so the tile can show the
-  // "Main category › Sub-category" hierarchy instead of a bare name that
-  // could be mistaken for a top-level category.
-  final Category? parentCategory;
-  final VoidCallback onEdit;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final categoryLabel = parentCategory != null
-        ? '${parentCategory!.name} › ${category?.name ?? 'Unknown'}'
-        : (category?.name ?? 'Unknown category');
-
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: category != null ? Color(category!.colorValue) : Colors.grey,
-          child: Text(
-            (category?.name ?? '?').substring(0, 1).toUpperCase(),
-            style: const TextStyle(color: Colors.white),
-          ),
-        ),
-        title: Text(_currencyFormat.format(expense.amount)),
-        subtitle: Text(
-          [
-            categoryLabel,
-            _dateFormat.format(expense.date),
-            if ((expense.note ?? '').isNotEmpty) expense.note!,
-          ].join(' · '),
-        ),
-        trailing: PopupMenuButton<String>(
-          onSelected: (action) => _handle(context, ref, action),
-          itemBuilder: (context) => const [
-            PopupMenuItem(value: 'edit', child: Text('Edit')),
-            PopupMenuItem(value: 'delete', child: Text('Delete')),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _handle(BuildContext context, WidgetRef ref, String action) async {
-    switch (action) {
-      case 'edit':
-        onEdit();
-      case 'delete':
-        final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: const Text('Delete expense?'),
-            content: const Text('This can\'t be undone.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.of(dialogContext).pop(true),
-                child: const Text('Delete'),
-              ),
-            ],
-          ),
-        );
-        if (confirmed == true) {
-          await ref.read(expenseRepositoryProvider).delete(expense.id);
-        }
-    }
   }
 }

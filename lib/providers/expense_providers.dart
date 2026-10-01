@@ -37,3 +37,8 @@ final categoryActualForMonthProvider = FutureProvider.autoDispose
           .watch(expenseRepositoryProvider)
           .sumForCategoryInRange(key.categoryId, start, end);
     });
+
+/// Every expense, newest first — the All entries screen.
+final allExpensesProvider = StreamProvider.autoDispose<List<Expense>>((ref) {
+  return ref.watch(expenseRepositoryProvider).watchAll();
+});
