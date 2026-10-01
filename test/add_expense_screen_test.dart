@@ -10,6 +10,10 @@ void main() {
   testWidgets('add, edit, and delete an expense end-to-end (FR-5)', (
     tester,
   ) async {
+    // A phone-sized screen, so the recent list below the form is on screen.
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.5;
+    addTearDown(tester.view.reset);
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     final container = ProviderContainer(
       overrides: [appDatabaseProvider.overrideWithValue(db)],
