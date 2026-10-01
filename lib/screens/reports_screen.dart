@@ -9,6 +9,7 @@ import '../logic/trend_projection.dart';
 import '../models/enums.dart';
 import '../providers/category_providers.dart';
 import '../providers/report_providers.dart';
+import 'monthly_reports_screen.dart';
 
 final _currencyFormat = NumberFormat.currency(symbol: currencySymbol, decimalDigits: 0);
 final _compactCurrencyFormat = NumberFormat.compactCurrency(
@@ -55,6 +56,13 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Reports'),
+        actions: [
+          IconButton(
+            tooltip: 'Monthly reports',
+            icon: const Icon(Icons.summarize_outlined),
+            onPressed: () => _openMonthly(context),
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
@@ -67,6 +75,17 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
       ),
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton.tonalIcon(
+                onPressed: () => _openMonthly(context),
+                icon: const Icon(Icons.summarize_outlined),
+                label: const Text('Monthly reports: entries · compare · budget'),
+              ),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.all(12),
             child: _CategoryFilterDropdown(
@@ -91,6 +110,10 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
       ),
     );
   }
+}
+
+void _openMonthly(BuildContext context) {
+  Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const MonthlyReportsScreen()));
 }
 
 class _CategoryFilterDropdown extends ConsumerWidget {

@@ -28,14 +28,29 @@ android {
         // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)
         // You can force using the value of versionCode by specifying the `-P force-version-code-ignoring-abi=true`
         // flag during build.
+        // Version "1.0.0.N": pubspec's 1.0.0 is the Play Store version and
+        // only changes when decided; N (after "+") goes up by one on every
+        // build (tool/bump_build.sh) and is the versionCode.
         versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        versionName = "${flutter.versionName}.${flutter.versionCode}"
+    }
+
+    signingConfigs {
+        getByName("debug") {
+            // A committed key (instead of each machine's own
+            // ~/.android/debug.keystore) so every CI build is signed the
+            // same way and a new APK installs over the previous one,
+            // keeping the data on the phone.
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
     }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // TODO: Add your own signing config for the Play Store build.
             signingConfig = signingConfigs.getByName("debug")
         }
     }

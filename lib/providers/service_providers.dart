@@ -4,6 +4,7 @@ import '../services/alert_service.dart';
 import '../services/backup_service.dart';
 import '../services/budget_rollup_service.dart';
 import '../services/habit_backup_service.dart';
+import '../services/monthly_report_service.dart';
 import 'database_providers.dart';
 
 final alertServiceProvider = Provider<AlertService>((ref) {
@@ -28,4 +29,13 @@ final backupServiceProvider = Provider<BackupService>((ref) {
 
 final habitBackupServiceProvider = Provider<HabitBackupService>((ref) {
   return HabitBackupService(ref.watch(appDatabaseProvider));
+});
+
+final monthlyReportServiceProvider = Provider<MonthlyReportService>((ref) {
+  return MonthlyReportService(
+    ref.watch(categoryRepositoryProvider),
+    ref.watch(expenseRepositoryProvider),
+    ref.watch(budgetRepositoryProvider),
+    ref.watch(budgetRollupServiceProvider),
+  );
 });

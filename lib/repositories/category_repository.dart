@@ -15,6 +15,13 @@ class CategoryRepository {
     return query.watch();
   }
 
+  /// All categories, including archived ones, once (for reports).
+  Future<List<Category>> getAll() {
+    final query = _db.select(_db.categories);
+    query.orderBy([(c) => OrderingTerm.asc(c.name)]);
+    return query.get();
+  }
+
   /// Top-level categories (no parent). FR-1.1.
   Stream<List<Category>> watchTopLevel({bool activeOnly = true}) {
     final query = _db.select(_db.categories)

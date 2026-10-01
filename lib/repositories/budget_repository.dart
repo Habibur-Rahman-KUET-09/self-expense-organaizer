@@ -94,6 +94,17 @@ class BudgetRepository {
     });
   }
 
+  /// Copies the previous month's budgets into [year]/[month] when that month
+  /// has none yet — a new month starts with last month's budgets, which can
+  /// then be changed or added to. Returns whether anything was copied.
+  Future<bool> copyFromPreviousIfEmpty(int year, int month) async {
+    if ((await getForMonth(year, month)).isNotEmpty) return false;
+    final prev = DateTime(year, month - 1);
+    if ((await getForMonth(prev.year, prev.month)).isEmpty) return false;
+    await copyForward(fromYear: prev.year, fromMonth: prev.month, toYear: year, toMonth: month);
+    return true;
+  }
+
   /// FR-2.3: total monthly min/max across all categories. [max] only sums
   /// categories that actually have a Max set (unset ones contribute 0) —
   /// it's a reference figure, not the Dashboard's headline budget total,

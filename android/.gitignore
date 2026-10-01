@@ -12,3 +12,7 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+# The shared debug key (android/app/debug.keystore) is committed on purpose:
+# every build is signed the same way, so a new APK installs over the old one.
+!app/debug.keystore

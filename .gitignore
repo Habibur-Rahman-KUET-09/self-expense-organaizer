@@ -70,3 +70,4 @@ xcuserdata/
 
 # Exported backup files if ever generated inside the repo during local testing
 /exports/
+!android/app/debug.keystore

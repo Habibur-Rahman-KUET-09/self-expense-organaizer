@@ -40,6 +40,21 @@ class _BudgetSetupScreenState extends ConsumerState<BudgetSetupScreen> {
     super.initState();
     final now = DateTime.now();
     _selectedMonth = DateTime(now.year, now.month);
+    _autoCopy();
+  }
+
+  /// A month with no budgets yet starts from the previous month's (the
+  /// current month or a later one only, never rewriting the past).
+  Future<void> _autoCopy() async {
+    final now = DateTime.now();
+    final month = _selectedMonth;
+    if (month.isBefore(DateTime(now.year, now.month))) return;
+    final copied = await ref.read(budgetRepositoryProvider).copyFromPreviousIfEmpty(month.year, month.month);
+    if (copied && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Budgets copied from ${DateFormat.yMMMM().format(DateTime(month.year, month.month - 1))}')),
+      );
+    }
   }
 
   MonthKey get _monthKey =>
@@ -81,7 +96,10 @@ class _BudgetSetupScreenState extends ConsumerState<BudgetSetupScreen> {
           MonthSelector(
             year: _selectedMonth.year,
             month: _selectedMonth.month,
-            onChanged: (dt) => setState(() => _selectedMonth = DateTime(dt.year, dt.month)),
+            onChanged: (dt) {
+              setState(() => _selectedMonth = DateTime(dt.year, dt.month));
+              _autoCopy();
+            },
           ),
           totalsAsync.when(
             data: (totals) => Padding(
@@ -217,11 +235,11 @@ class _CategorySection extends ConsumerWidget {
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
           leading: CircleAvatar(backgroundColor: Color(category.colorValue)),
-          title: Text(
-            category.name,
-            style: category.isActive
-                ? null
-                : const TextStyle(decoration: TextDecoration.lineThrough),
+          title: _OverBudgetName(
+            name: category.name,
+            archived: !category.isActive,
+            key: ValueKey('cat-${category.id}'),
+            overBudget: _isCategoryOver(ref, category.id, monthKey),
           ),
           subtitle: _ParentBudgetRow(
             categoryId: category.id,
@@ -310,12 +328,11 @@ class _SubCategoryTile extends ConsumerWidget {
             Icon(Icons.subdirectory_arrow_right, size: 14, color: tint),
             const SizedBox(width: 4),
             Expanded(
-              child: Text(
-                category.name,
-                style: (category.isActive
-                        ? const TextStyle()
-                        : const TextStyle(decoration: TextDecoration.lineThrough))
-                    .copyWith(fontStyle: FontStyle.italic),
+              child: _OverBudgetName(
+                name: category.name,
+                archived: !category.isActive,
+                italic: true,
+                overBudget: _isSubCategoryOver(ref, category.id, monthKey),
               ),
             ),
           ],
@@ -335,6 +352,66 @@ class _SubCategoryTile extends ConsumerWidget {
 /// budget directly, or a read-only computed summary when it has any
 /// sub-category budgets — per product decision, those are summed to *become*
 /// this category's budget, so editing it directly wouldn't do anything.
+/// A category's spend (sub-categories included) has reached its effective
+/// budget. Expenses can still be added — this only marks it.
+bool _isCategoryOver(WidgetRef ref, int categoryId, MonthKey monthKey) {
+  final key = (categoryId: categoryId, year: monthKey.year, month: monthKey.month);
+  final budget = ref.watch(effectiveBudgetForCategoryProvider(key)).value;
+  final actual = ref.watch(rolledUpActualForCategoryProvider(key)).value;
+  if (budget == null || actual == null || !budget.hasBudget) return false;
+  return budget.ceiling > 0 && actual >= budget.ceiling;
+}
+
+/// A sub-category's own spend has reached its own budget.
+bool _isSubCategoryOver(WidgetRef ref, int categoryId, MonthKey monthKey) {
+  final key = (categoryId: categoryId, year: monthKey.year, month: monthKey.month);
+  final budget = ref.watch(budgetForCategoryMonthProvider(key)).value;
+  final actual = ref.watch(categoryActualForMonthProvider(key)).value;
+  if (budget == null || actual == null) return false;
+  return budget.effectiveCeiling > 0 && actual >= budget.effectiveCeiling;
+}
+
+/// A category or sub-category name: struck through and red once its budget
+/// is used up (entries can still be added), struck through for archived.
+class _OverBudgetName extends StatelessWidget {
+  const _OverBudgetName({
+    super.key,
+    required this.name,
+    required this.archived,
+    required this.overBudget,
+    this.italic = false,
+  });
+
+  final String name;
+  final bool archived;
+  final bool overBudget;
+  final bool italic;
+
+  @override
+  Widget build(BuildContext context) {
+    final error = Theme.of(context).colorScheme.error;
+    return Text.rich(
+      TextSpan(children: [
+        TextSpan(
+          text: name,
+          style: TextStyle(
+            decoration: archived || overBudget ? TextDecoration.lineThrough : null,
+            decorationColor: overBudget ? error : null,
+            decorationThickness: overBudget ? 2 : null,
+            color: overBudget ? error : null,
+            fontStyle: italic ? FontStyle.italic : null,
+          ),
+        ),
+        if (overBudget)
+          TextSpan(
+            text: '  over budget',
+            style: TextStyle(fontSize: 11, color: error, fontStyle: FontStyle.normal),
+          ),
+      ]),
+    );
+  }
+}
+
 class _ParentBudgetRow extends ConsumerWidget {
   const _ParentBudgetRow({
     required this.categoryId,

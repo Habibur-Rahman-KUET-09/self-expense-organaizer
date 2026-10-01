@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../db/database.dart';
 import '../services/budget_rollup_service.dart';
 import 'database_providers.dart';
+import 'expense_providers.dart';
 import 'service_providers.dart';
 
 typedef MonthKey = ({int year, int month});
@@ -52,4 +53,15 @@ final monthlyRollupTotalsProvider = FutureProvider.autoDispose
       final min = await rollup.totalMinBudgetForMonth(key.year, key.month);
       final max = await rollup.totalCeilingBudgetForMonth(key.year, key.month);
       return (min: min, max: max);
+    });
+
+/// A category's spend for a month including its sub-categories' spend — the
+/// figure its effective budget ([effectiveBudgetForCategoryProvider]) is
+/// compared against. Reactive to new expenses that month.
+final rolledUpActualForCategoryProvider = FutureProvider.autoDispose
+    .family<double, CategoryMonthKey>((ref, key) {
+      ref.watch(expensesInMonthProvider((year: key.year, month: key.month)));
+      return ref
+          .watch(budgetRollupServiceProvider)
+          .rolledUpActual(key.categoryId, key.year, key.month);
     });

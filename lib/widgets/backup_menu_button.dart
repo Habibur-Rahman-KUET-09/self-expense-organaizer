@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../providers/service_providers.dart';
 import '../services/backup_service.dart';
@@ -30,6 +31,18 @@ class BackupMenuButton extends ConsumerWidget {
         _sectionHeader(context, 'Habit'),
         const PopupMenuItem(value: 'habit_backup', child: Text('Export habit backup (JSON)')),
         const PopupMenuItem(value: 'habit_restore', child: Text('Import habit backup (JSON)')),
+        const PopupMenuDivider(),
+        PopupMenuItem<String>(
+          enabled: false,
+          height: 28,
+          child: FutureBuilder<PackageInfo>(
+            future: PackageInfo.fromPlatform(),
+            builder: (context, snap) => Text(
+              snap.hasData ? 'Version ${appVersionLabel(snap.data!)}' : '',
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -159,3 +172,8 @@ class BackupMenuButton extends ConsumerWidget {
     );
   }
 }
+
+/// "1.0.0.N": on Android the versionName already carries the build number
+/// (android/app/build.gradle.kts); elsewhere it is added here.
+String appVersionLabel(PackageInfo info) =>
+    info.version.split('.').length >= 4 || info.buildNumber.isEmpty ? info.version : '${info.version}.${info.buildNumber}';

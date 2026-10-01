@@ -40,6 +40,19 @@ class ExpenseRepository {
     return query.watch();
   }
 
+  /// Expenses within [startInclusive, endExclusive), oldest first — for
+  /// the month-wise entries report.
+  Future<List<Expense>> getInRange(DateTime startInclusive, DateTime endExclusive) {
+    final query = _db.select(_db.expenses)
+      ..where(
+        (e) =>
+            e.date.isBiggerOrEqualValue(startInclusive) &
+            e.date.isSmallerThanValue(endExclusive),
+      )
+      ..orderBy([(e) => OrderingTerm.asc(e.date), (e) => OrderingTerm.asc(e.id)]);
+    return query.get();
+  }
+
   Stream<List<Expense>> watchForCategoryInRange(
     int categoryId,
     DateTime startInclusive,
