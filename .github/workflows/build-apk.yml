@@ -54,4 +54,4 @@ jobs:
         with:
           name: PersonalOrganiser-${{ steps.version.outputs.version }}
           path: build/app/outputs/flutter-apk/PersonalOrganiser-*.apk
-          retention-days: 30
+          retention-days: 7
